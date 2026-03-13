@@ -2,121 +2,59 @@ import pyautogui
 import time
 import sys
 import random
-import os
 
-pyautogui.FAILSAFE = False
-
-MACHINE_ID = sys.argv[1] if len(sys.argv) > 1 else "1"
+# Ekrani 1440x900 varsayiyoruz (YAML'da oyle ayarladik)
+# BU DEGERLERI RDP ILE GIRIP KONTROL ETTIKTEN SONRA GUNCELLE
+KOORDINATLAR = {
+    "username_kutusu": (720, 450),  # Ornek: Ekranin ortasi
+    "privacy_check": (600, 550),
+    "cloudflare_box": (720, 650),
+    "vote_butonu": (720, 800)
+}
 
 USERNAME = "ZdzqcvDM7o"
 
-CONFIDENCE = 0.7
+def insansi_tikla(x, y):
+    # Hafif sapma payi ekle ki robot oldugu anlasilmasin (+- 3 piksel)
+    hedef_x = x + random.randint(-3, 3)
+    hedef_y = y + random.randint(-3, 3)
+    
+    pyautogui.moveTo(hedef_x, hedef_y, duration=random.uniform(0.8, 1.5), tween=pyautogui.easeOutQuad)
+    time.sleep(random.uniform(0.5, 1.0))
+    pyautogui.click()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+def baslat():
+    print("--- KONUM BULUCU MODU ---")
+    print("Fareyi 10 saniye icinde tiklanacak yere getir...")
+    time.sleep(10)
+    print(f"SU ANKI FARE KONUMUN: {pyautogui.position()}") 
+    print("-------------------------")
 
-
-def img(name):
-    return os.path.join(BASE_DIR, name)
-
-
-def human_wait(a=2,b=5):
-    time.sleep(random.uniform(a,b))
-
-
-def find_and_click(image,desc):
-
-    print(f"[>] Araniyor: {desc}")
-
-    try:
-
-        pos = pyautogui.locateOnScreen(
-            img(image),
-            confidence=CONFIDENCE,
-            grayscale=True,
-            region=(0,0,1440,900)
-        )
-
-        if pos:
-
-            center = pyautogui.center(pos)
-
-            pyautogui.moveTo(
-                center.x,
-                center.y,
-                duration=random.uniform(1.2,2.3),
-                tween=pyautogui.easeOutQuad
-            )
-
-            human_wait(0.5,1.2)
-
-            pyautogui.click()
-
-            print(f"[+] {desc} tiklandi")
-
-            return True
-
-    except Exception as e:
-        print(f"Hata: {e}")
-
-    return False
-
-
-def wait_and_click(image,desc,timeout=60):
-
-    start = time.time()
-
-    while time.time() - start < timeout:
-
-        if find_and_click(image,desc):
-            return True
-
-        time.sleep(2)
-
-    print(f"[X] {desc} bulunamadi")
-
-    return False
-
-
-def type_username():
-
-    human_wait()
-
-    for letter in USERNAME:
-
-        pyautogui.press(letter)
-
-        time.sleep(random.uniform(0.15,0.35))
-
-
-def start_bot():
-
-    print("\n====================")
-    print(f"MAKINE {MACHINE_ID}")
-    print("====================\n")
-
-    print("120 saniye bekleniyor (RDP baglanmak icin)")
+    print("120 saniye bekletiliyor (RDP baglantisi icin)...")
     time.sleep(120)
 
-    print("BOT BASLADI")
+    # 1. Isim Yazma
+    x, y = KOORDINATLAR["username_kutusu"]
+    insansi_tikla(x, y)
+    for harf in USERNAME:
+        pyautogui.write(harf)
+        time.sleep(random.uniform(0.1, 0.3))
 
-    if wait_and_click("username_box.png","username kutusu"):
-        type_username()
+    # 2. Privacy
+    time.sleep(2)
+    x, y = KOORDINATLAR["privacy_check"]
+    insansi_tikla(x, y)
 
-    human_wait()
+    # 3. Cloudflare
+    time.sleep(5)
+    x, y = KOORDINATLAR["cloudflare_box"]
+    insansi_tikla(x, y)
+    time.sleep(20) # Onaylanmasini bekle
 
-    wait_and_click("privacy_check.png","privacy checkbox")
-
-    human_wait()
-
-    if wait_and_click("cloudflare_check.png","cloudflare"):
-        time.sleep(20)
-
-    human_wait()
-
-    wait_and_click("vote_btn.png","vote butonu")
-
-    print("ISLEM TAMAMLANDI")
-
+    # 4. Vote
+    x, y = KOORDINATLAR["vote_butonu"]
+    insansi_tikla(x, y)
+    print("ISLEM BITTI!")
 
 if __name__ == "__main__":
-    start_bot()
+    baslat()
