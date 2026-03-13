@@ -24,50 +24,38 @@ jobs:
 
       - name: RDP aktif et
         run: |
-          try {
-            Set-DisplayResolution -Width 1440 -Height 900 -Force
-          } catch {}
-
+          try { Set-DisplayResolution -Width 1440 -Height 900 -Force } catch {}
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-
           $pass = ConvertTo-SecureString "Admin123!" -AsPlainText -Force
           Set-LocalUser -Name "runneradmin" -Password $pass
 
       - name: Chrome aç
         run: |
-
           $url = "https://minecraft-mp.com/server/328354/vote/"
 
           $chrome = (Get-Command chrome -ErrorAction SilentlyContinue).Source
-
           if (-not $chrome) {
             $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
           }
 
-          Start-Process -FilePath $chrome -ArgumentList "--start-maximized","--no-first-run","--no-default-browser-check",$url
-
-          Start-Sleep -s 20
+          Start-Process -FilePath $chrome -ArgumentList "--start-maximized","--no-first-run",$url
+          Start-Sleep -Seconds 20
 
       - name: Python bot
         run: |
-
           pip install pyautogui opencv-python pillow --quiet
 
-          $bot = Get-ChildItem -Path . -Filter "vote_bot.py" -Recurse | Select-Object -First 1
+          $botPath = ".github/workflows/vote_bot.py"
 
-          if ($bot) {
-            python $bot.FullName ${{ matrix.machine }}
-          }
-          else {
+          if (Test-Path $botPath) {
+            python $botPath ${{ matrix.machine }}
+          } else {
             Write-Host "vote_bot.py bulunamadi"
           }
 
       - name: Bore tunnel
         run: |
-
           Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
-
           Expand-Archive bore.zip
-
           .\bore.exe local 3389 --to bore.pub
