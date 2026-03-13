@@ -2,11 +2,9 @@ name: 3-rdp-makinesi
 on: workflow_dispatch
 
 jobs:
-  makine:
+  makine1:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        makine_no: [1, 2, 3]
+    timeout-minutes: 9999
     steps:
       - name: Kodlari Cek
         uses: actions/checkout@v4
@@ -19,27 +17,110 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Sistemsel Ayarlar
+      - name: Sistemsel Ayarlar ve RDP
         run: |
           Set-DisplayResolution -Width 1440 -Height 900 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
 
-      - name: Chrome Baslat (Sign-in Engelli)
+      - name: Chrome Baslat
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
           $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          # --no-first-run ve --no-service-autorun sign-in ekranini engeller
-          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--no-service-autorun", "--disable-notifications", "--disable-extensions", $url
-          Start-Sleep -s 25
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "MAKINE 1 - Chrome baslatildi!" -ForegroundColor Green
 
       - name: Python Botu Calistir
         run: |
           python -m pip install --upgrade pip
           pip install pyautogui opencv-python pillow
           cd .github/workflows
-          python vote_bot.py ${{ matrix.makine_no }}
+          python vote_bot.py 1
+
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
+          .\bore.exe local 3389 --to bore.pub
+
+  makine2:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
+
+      - name: Kutuphaneleri Cache'den Getir
+        uses: actions/cache@v3
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-v2
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Sistemsel Ayarlar ve RDP
+        run: |
+          Set-DisplayResolution -Width 1440 -Height 900 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+
+      - name: Chrome Baslat
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "MAKINE 2 - Chrome baslatildi!" -ForegroundColor Green
+
+      - name: Python Botu Calistir
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyautogui opencv-python pillow
+          cd .github/workflows
+          python vote_bot.py 2
+
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
+          .\bore.exe local 3389 --to bore.pub
+
+  makine3:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
+
+      - name: Kutuphaneleri Cache'den Getir
+        uses: actions/cache@v3
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-v2
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Sistemsel Ayarlar ve RDP
+        run: |
+          Set-DisplayResolution -Width 1440 -Height 900 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+
+      - name: Chrome Baslat
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "MAKINE 3 - Chrome baslatildi!" -ForegroundColor Green
+
+      - name: Python Botu Calistir
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyautogui opencv-python pillow
+          cd .github/workflows
+          python vote_bot.py 3
 
       - name: Start Bore Tunnel
         run: |
