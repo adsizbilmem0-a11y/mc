@@ -29,7 +29,7 @@ def start_bot():
     # 1. Username kutusu
     if click_image('username_box.png', 'Username Box'):
         time.sleep(1)
-        pyautogui.write("KullaniciAdin", interval=0.1) 
+        pyautogui.write("ZdzqcvDM7o", interval=0.1) 
     
     # 2. Privacy Checkbox
     time.sleep(1)
