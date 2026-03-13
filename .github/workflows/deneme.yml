@@ -1,0 +1,114 @@
+name: 3-rdp-makinesi
+on: workflow_dispatch
+
+jobs:
+  makine1:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    
+    steps:
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+      
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      
+      - name: Open Chrome with Site
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "Makine1 - Chrome baslatildi!" -ForegroundColor Green
+      
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip
+          cd bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 1 - RDP BAGLANTI BILGILERI:" -ForegroundColor Green
+          Write-Host "Kullanici: runneradmin" -ForegroundColor Yellow
+          Write-Host "Sifre: Admin123!" -ForegroundColor Yellow
+          Write-Host "Chrome acildi!" -ForegroundColor Magenta
+          Write-Host "Site: https://minecraft-mp.com/server/328354/vote/" -ForegroundColor Magenta
+          Write-Host "Tunnel baslatiliyor..." -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore.exe local 3389 --to bore.pub
+
+  makine2:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    
+    steps:
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+      
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      
+      - name: Open Chrome with Site
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "Makine2 - Chrome baslatildi!" -ForegroundColor Green
+      
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip
+          cd bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 2 - RDP BAGLANTI BILGILERI:" -ForegroundColor Green
+          Write-Host "Kullanici: runneradmin" -ForegroundColor Yellow
+          Write-Host "Sifre: Admin123!" -ForegroundColor Yellow
+          Write-Host "Chrome acildi!" -ForegroundColor Magenta
+          Write-Host "Site: https://minecraft-mp.com/server/328354/vote/" -ForegroundColor Magenta
+          Write-Host "Tunnel baslatiliyor..." -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore.exe local 3389 --to bore.pub
+
+  makine3:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    
+    steps:
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+      
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      
+      - name: Open Chrome with Site
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--disable-sync", $url
+          Write-Host "Makine3 - Chrome baslatildi!" -ForegroundColor Green
+      
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip
+          cd bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 3 - RDP BAGLANTI BILGILERI:" -ForegroundColor Green
+          Write-Host "Kullanici: runneradmin" -ForegroundColor Yellow
+          Write-Host "Sifre: Admin123!" -ForegroundColor Yellow
+          Write-Host "Chrome acildi!" -ForegroundColor Magenta
+          Write-Host "Site: https://minecraft-mp.com/server/328354/vote/" -ForegroundColor Magenta
+          Write-Host "Tunnel baslatiliyor..." -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore.exe local 3389 --to bore.pub
