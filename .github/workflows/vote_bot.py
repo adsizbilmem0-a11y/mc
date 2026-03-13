@@ -3,49 +3,71 @@ import time
 import os
 import sys
 
-# Terminalin Turkce karakterlerle kafayi yememesi icin cikis kodlamasini zorla
+# Terminal cikisini UTF-8 yap (Turkce karakter hatasi almamak icin)
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Ayarlar
-CONFIDENCE = 0.8  
+# Makine numarasini al
+m_id = sys.argv[1] if len(sys.argv) > 1 else "X"
+USER_NAME = f"Mert_Gamer_{m_id}" # Burayi istersen sabit bir isim yapabilirsin
+CONF = 0.7 # Benzerlik orani (%70)
 
-def click_image(image_name, message):
-    print(f"[>] Searching for: {message}")
+def debug_ekran_kaydet(hata_adi):
+    if not os.path.exists("debug_screenshots"):
+        os.makedirs("debug_screenshots")
+    pyautogui.screenshot(f"debug_screenshots/hata_{hata_adi}.png")
+    print(f"[DEBUG] Ekran goruntusu alindi: hata_{hata_adi}.png")
+
+def akilli_tikla(resim, aciklama, bekle=2):
+    print(f"[>] Araniyor: {aciklama} ({resim})...")
     try:
-        # Resim workflows klasorunde oldugu icin direkt adıyla arıyoruz
-        konum = pyautogui.locateOnScreen(image_name, confidence=CONFIDENCE)
-        if konum:
-            pyautogui.click(konum)
-            print(f"[+] Clicked: {message}")
-            return True
-    except Exception as e:
-        print(f"[-] Error or not found ({message}): {e}")
-    return False
+        # Resim dosyasinin varligini kontrol et
+        if not os.path.exists(resim):
+            print(f"[!] HATA: {resim} dosyasi klasorde bulunamadi!")
+            return False
 
-def start_bot():
-    print("--- VOTE BOT STARTED (1440x900) ---")
-    time.sleep(15)  # Chrome'un yuklenmesi icin bekleme
+        # Ekranda ara
+        konum = pyautogui.locateOnScreen(resim, confidence=CONF)
+        
+        if konum:
+            merkez = pyautogui.center(konum)
+            pyautogui.click(merkez)
+            print(f"[+] BASARILI: {aciklama} tiklandi. Koordinat: {merkez}")
+            time.sleep(bekle)
+            return True
+        else:
+            print(f"[-] UYARI: {aciklama} ekranda bulunamadi.")
+            return False
+    except Exception as e:
+        print(f"[!] KRITIK HATA ({aciklama}): {e}")
+        debug_ekran_kaydet(aciklama.replace(" ", "_"))
+        return False
+
+def bot_baslat():
+    print(f"\n--- BOT CALISIYOR | MAKINE: {m_id} | USER: {USER_NAME} ---")
     
-    # 1. Username kutusu
-    if click_image('username_box.png', 'Username Box'):
-        time.sleep(1)
-        pyautogui.write("ZdzqcvDM7o", interval=0.1) 
-    
+    # 1. Username Kutusu
+    if akilli_tikla('username_box.png', 'Username Kutusu'):
+        pyautogui.write(USER_NAME, interval=0.1)
+        print(f"[+] Isim yazildi: {USER_NAME}")
+    else:
+        # Eger bulamazsa sayfayi biraz asagi kaydirip tekrar dene
+        print("[DEBUG] Kutusu bulunamadı, sayfa kaydiriliyor...")
+        pyautogui.scroll(-300)
+        akilli_tikla('username_box.png', 'Username Kutusu (Tekrar)')
+
     # 2. Privacy Checkbox
-    time.sleep(1)
-    click_image('privacy_check.png', 'Privacy Checkbox')
+    akilli_tikla('privacy_check.png', 'Privacy Checkbox')
+
+    # 3. Cloudflare Onayi
+    if akilli_tikla('cloudflare_check.png', 'Cloudflare Kutusu', bekle=8):
+        print("[DEBUG] Cloudflare tiklandi, onay bekleniyor...")
     
-    # 3. Cloudflare Verify
-    time.sleep(1)
-    click_image('cloudflare_check.png', 'Cloudflare Verify')
-    
-    # Bekleme (Dogrulama icin)
-    time.sleep(5)
-    
-    # 4. Vote Button
-    click_image('vote_btn.png', 'Vote Button')
-    
-    print("[!] Process Finished.")
+    # 4. Vote Butonu
+    if akilli_tikla('vote_btn.png', 'VOTE BUTONU'):
+        print("[!!!] ISLEM TAMAMLANDI! OY VERILDI.")
+    else:
+        print("[!] Vote butonu bulunamadigi icin islem bitirilemedi.")
+        debug_ekran_kaydet("vote_butonu_yok")
 
 if __name__ == "__main__":
-    start_bot()
+    bot_baslat()
