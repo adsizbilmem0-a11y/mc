@@ -1,70 +1,121 @@
 import pyautogui
 import time
-import os
 import sys
 import random
 
-# Terminal cikis ayari
-sys.stdout.reconfigure(encoding='utf-8')
+pyautogui.FAILSAFE = False
 
-m_id = sys.argv[1] if len(sys.argv) > 1 else "1"
-USER_NAME = "ZdzqcvDM7o" 
-CONF = 0.7 
+MACHINE_ID = sys.argv[1] if len(sys.argv) > 1 else "1"
 
-def insansi_bekle(min_sn=2, max_sn=5):
-    time.sleep(random.uniform(min_sn, max_sn))
+USERNAME = "ZdzqcvDM7o"
 
-def insansi_hareket_ve_tikla(resim, aciklama):
-    print(f"[>] Araniyor: {aciklama}...")
+CONFIDENCE = 0.7
+
+
+def human_wait(a=2,b=5):
+    time.sleep(random.uniform(a,b))
+
+
+def find_and_click(image,desc):
+
+    print(f"[>] Araniyor: {desc}")
+
     try:
-        konum = pyautogui.locateOnScreen(resim, confidence=CONF)
-        if konum:
-            merkez = pyautogui.center(konum)
-            # Fareyi kavisli ve yavas hareket ettir
-            pyautogui.moveTo(merkez.x, merkez.y, 
-                             duration=random.uniform(1.2, 2.5), 
-                             tween=pyautogui.easeOutQuad)
-            insansi_bekle(0.8, 1.5)
+
+        pos = pyautogui.locateOnScreen(
+            image,
+            confidence=CONFIDENCE,
+            grayscale=True,
+            region=(0,0,1440,900)
+        )
+
+        if pos:
+
+            center = pyautogui.center(pos)
+
+            pyautogui.moveTo(
+                center.x,
+                center.y,
+                duration=random.uniform(1.2,2.3),
+                tween=pyautogui.easeOutQuad
+            )
+
+            human_wait(0.5,1.2)
+
             pyautogui.click()
-            print(f"[+] {aciklama} tiklandi.")
+
+            print(f"[+] {desc} tiklandi")
+
             return True
+
     except Exception as e:
-        print(f"[!] {aciklama} sirasinda hata: {e}")
+
+        print(f"[!] hata: {e}")
+
     return False
 
-def bot_baslat():
-    print(f"\n=== MAKINE {m_id} BASLATILIYOR ===")
-    print(f"[!] HEDEF OYUNCU: {USER_NAME}")
-    print("[!] 120 SANIYE BEKLEME SURESI... RDP ILE GIRIS YAPIN!")
-    
-    for i in range(4):
-        time.sleep(30)
-        print(f"[DEBUG] Kalan sure: {(3-i)*30} saniye...")
 
-    print(f"--- OTOMASYON ISLEMLERI BASLADI ---")
-    
-    # 1. Isim Yazma
-    if insansi_hareket_ve_tikla('username_box.png', 'Username Kutusu'):
-        insansi_bekle(1.5, 3)
-        for harf in USER_NAME:
-            pyautogui.write(harf)
-            time.sleep(random.uniform(0.15, 0.4))
-        print(f"[+] Isim yazma islemi bitti.")
+def wait_and_click(image,desc,timeout=60):
 
-    # 2. Privacy Check
-    insansi_bekle(2, 4)
-    insansi_hareket_ve_tikla('privacy_check.png', 'Privacy Checkbox')
+    start = time.time()
 
-    # 3. Cloudflare Onayi
-    insansi_bekle(4, 7)
-    if insansi_hareket_ve_tikla('cloudflare_check.png', 'Cloudflare Kutusu'):
-        print("[DEBUG] Cloudflare onay bekliyor (20sn)...")
+    while time.time() - start < timeout:
+
+        if find_and_click(image,desc):
+            return True
+
+        time.sleep(2)
+
+    print(f"[X] {desc} bulunamadi")
+
+    return False
+
+
+def type_username():
+
+    human_wait()
+
+    for letter in USERNAME:
+
+        pyautogui.press(letter)
+
+        time.sleep(random.uniform(0.15,0.35))
+
+
+def start_bot():
+
+    print("\n===========================")
+    print(f"MAKINE {MACHINE_ID} BASLADI")
+    print("===========================\n")
+
+    print("120 saniye bekleniyor (RDP baglanmak icin)")
+
+    time.sleep(120)
+
+    print("BOT CALISIYOR")
+
+    if wait_and_click("username_box.png","username kutusu"):
+
+        type_username()
+
+    human_wait()
+
+    wait_and_click("privacy_check.png","privacy checkbox")
+
+    human_wait()
+
+    if wait_and_click("cloudflare_check.png","cloudflare"):
+
+        print("Cloudflare bekleniyor")
+
         time.sleep(20)
 
-    # 4. Final Vote Butonu
-    insansi_bekle(3, 6)
-    if insansi_hareket_ve_tikla('vote_btn.png', 'VOTE BUTONU'):
-        print("[!!!] TEBRIKLER! OY VERME TAMAMLANDI.")
+    human_wait()
+
+    wait_and_click("vote_btn.png","vote butonu")
+
+    print("\nISLEM TAMAMLANDI\n")
+
 
 if __name__ == "__main__":
-    bot_baslat()
+    start_bot()
