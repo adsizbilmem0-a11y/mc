@@ -1,61 +1,85 @@
-name: vote-bot-machines
-
-on:
-  workflow_dispatch:
+name: 3-rdp-makinesi
+on: workflow_dispatch
 
 jobs:
-  bot:
+  makine1:
     runs-on: windows-latest
-    timeout-minutes: 360
-
-    strategy:
-      matrix:
-        machine: [1,2,3]
-
+    timeout-minutes: 9999
     steps:
-      - name: Repo indir
+      - name: Kodlari Cek
         uses: actions/checkout@v4
 
-      - name: Pip cache
-        uses: actions/cache@v3
-        with:
-          path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip-cache
-
-      - name: RDP aktif et
+      - name: Enable RDP
         run: |
-          try { Set-DisplayResolution -Width 1440 -Height 900 -Force } catch {}
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          $pass = ConvertTo-SecureString "Admin123!" -AsPlainText -Force
-          Set-LocalUser -Name "runneradmin" -Password $pass
-
-      - name: Chrome aç
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+      
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      
+      - name: Chrome Hazirla ve Botu Tetikle
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
-
-          $chrome = (Get-Command chrome -ErrorAction SilentlyContinue).Source
-          if (-not $chrome) {
-            $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          }
-
-          Start-Process -FilePath $chrome -ArgumentList "--start-maximized","--no-first-run",$url
-          Start-Sleep -Seconds 20
-
-      - name: Python bot
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", "--no-first-run", $url
+          
+          # Kütüphaneyi kur ve botu ARKA PLANDA başlat
+          pip install pyautogui --quiet
+          Start-Process python -ArgumentList "vote_bot.py", "1"
+      
+      - name: Start Bore Tunnel
         run: |
-          pip install pyautogui opencv-python pillow --quiet
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -Force
+          .\bore.exe local 3389 --to bore.pub
 
-          $botPath = ".github/workflows/vote_bot.py"
-
-          if (Test-Path $botPath) {
-            python $botPath ${{ matrix.machine }}
-          } else {
-            Write-Host "vote_bot.py bulunamadi"
-          }
-
-      - name: Bore tunnel
+  makine2:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
+      - name: Enable RDP
         run: |
-          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
-          Expand-Archive bore.zip
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      - name: Chrome ve Bot
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
+          pip install pyautogui --quiet
+          Start-Process python -ArgumentList "vote_bot.py", "2"
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -Force
+          .\bore.exe local 3389 --to bore.pub
+
+  makine3:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+      - name: Set Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+      - name: Chrome ve Bot
+        run: |
+          $url = "https://minecraft-mp.com/server/328354/vote/"
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
+          pip install pyautogui --quiet
+          Start-Process python -ArgumentList "vote_bot.py", "3"
+      - name: Start Bore Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -Force
           .\bore.exe local 3389 --to bore.pub
