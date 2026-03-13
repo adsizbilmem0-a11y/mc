@@ -2,95 +2,44 @@ name: 3-rdp-makinesi
 on: workflow_dispatch
 
 jobs:
-  makine1:
+  makine:
     runs-on: windows-latest
-    timeout-minutes: 9999
+    strategy:
+      matrix:
+        makine_no: [1, 2, 3]
     steps:
       - name: Kodlari Cek
         uses: actions/checkout@v4
 
-      - name: Ayarlar (Cozunurluk ve RDP)
+      - name: Kutuphaneleri Cache'den Getir
+        uses: actions/cache@v3
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-v2
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Sistemsel Ayarlar
         run: |
           Set-DisplayResolution -Width 1440 -Height 900 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
 
-      - name: Open Chrome
+      - name: Chrome Baslat (Sign-in Engelli)
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
-          Start-Sleep -s 20
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          # --no-first-run ve --no-service-autorun sign-in ekranini engeller
+          Start-Process -FilePath $chromePath -ArgumentList "--start-maximized", "--no-first-run", "--no-default-browser-check", "--no-service-autorun", "--disable-notifications", "--disable-extensions", $url
+          Start-Sleep -s 25
 
       - name: Python Botu Calistir
         run: |
+          python -m pip install --upgrade pip
           pip install pyautogui opencv-python pillow
           cd .github/workflows
-          python vote_bot.py 1
-
-      - name: Start Bore Tunnel
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
-          .\bore.exe local 3389 --to bore.pub
-
-  makine2:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
-
-      - name: Ayarlar (Cozunurluk ve RDP)
-        run: |
-          Set-DisplayResolution -Width 1440 -Height 900 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-
-      - name: Open Chrome
-        run: |
-          $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
-          Start-Sleep -s 20
-
-      - name: Python Botu Calistir
-        run: |
-          pip install pyautogui opencv-python pillow
-          cd .github/workflows
-          python vote_bot.py 2
-
-      - name: Start Bore Tunnel
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
-          .\bore.exe local 3389 --to bore.pub
-
-  makine3:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
-
-      - name: Ayarlar (Cozunurluk ve RDP)
-        run: |
-          Set-DisplayResolution -Width 1440 -Height 900 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-
-      - name: Open Chrome
-        run: |
-          $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
-          Start-Sleep -s 20
-
-      - name: Python Botu Calistir
-        run: |
-          pip install pyautogui opencv-python pillow
-          cd .github/workflows
-          python vote_bot.py 3
+          python vote_bot.py ${{ matrix.makine_no }}
 
       - name: Start Bore Tunnel
         run: |
