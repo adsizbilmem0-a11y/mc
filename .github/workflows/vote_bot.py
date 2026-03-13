@@ -2,6 +2,7 @@ import pyautogui
 import time
 import sys
 import random
+import os
 
 pyautogui.FAILSAFE = False
 
@@ -10,6 +11,12 @@ MACHINE_ID = sys.argv[1] if len(sys.argv) > 1 else "1"
 USERNAME = "ZdzqcvDM7o"
 
 CONFIDENCE = 0.7
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def img(name):
+    return os.path.join(BASE_DIR, name)
 
 
 def human_wait(a=2,b=5):
@@ -23,7 +30,7 @@ def find_and_click(image,desc):
     try:
 
         pos = pyautogui.locateOnScreen(
-            image,
+            img(image),
             confidence=CONFIDENCE,
             grayscale=True,
             region=(0,0,1440,900)
@@ -49,8 +56,7 @@ def find_and_click(image,desc):
             return True
 
     except Exception as e:
-
-        print(f"[!] hata: {e}")
+        print(f"Hata: {e}")
 
     return False
 
@@ -84,18 +90,16 @@ def type_username():
 
 def start_bot():
 
-    print("\n===========================")
-    print(f"MAKINE {MACHINE_ID} BASLADI")
-    print("===========================\n")
+    print("\n====================")
+    print(f"MAKINE {MACHINE_ID}")
+    print("====================\n")
 
     print("120 saniye bekleniyor (RDP baglanmak icin)")
-
     time.sleep(120)
 
-    print("BOT CALISIYOR")
+    print("BOT BASLADI")
 
     if wait_and_click("username_box.png","username kutusu"):
-
         type_username()
 
     human_wait()
@@ -105,16 +109,13 @@ def start_bot():
     human_wait()
 
     if wait_and_click("cloudflare_check.png","cloudflare"):
-
-        print("Cloudflare bekleniyor")
-
         time.sleep(20)
 
     human_wait()
 
     wait_and_click("vote_btn.png","vote butonu")
 
-    print("\nISLEM TAMAMLANDI\n")
+    print("ISLEM TAMAMLANDI")
 
 
 if __name__ == "__main__":
