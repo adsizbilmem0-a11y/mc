@@ -1,4 +1,4 @@
-name: vote-bot
+name: 3-proxy-makinesi
 on: workflow_dispatch
 
 jobs:
@@ -6,118 +6,67 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: Repoyu Cek
-        uses: actions/checkout@v3
-
-      - name: Kutuphaneleri Kur
-        run: pip install setuptools undetected-chromedriver
-
-      - name: WinRAR Kur ve data.rar Ac
+      - name: Proxy Kur ve Baslat
         run: |
-          Invoke-WebRequest -Uri "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe" -OutFile "winrar.exe"
-          Start-Process winrar.exe -ArgumentList "/S" -Wait
-          & "C:\Program Files\WinRAR\UnRAR.exe" x data.rar "C:\chromeprofile\" -y
-
-      - name: Bot Kodunu Olustur
-        run: |
-          @'
-          import undetected_chromedriver as uc
-          from selenium.webdriver.common.by import By
-          from selenium.webdriver.support.ui import WebDriverWait
-          from selenium.webdriver.support import expected_conditions as EC
-          import time
-          import sys
-          sys.stdout.reconfigure(encoding='utf-8')
-
-          def oy_at(minecraft_nick):
-              options = uc.ChromeOptions()
-              options.add_argument("--start-maximized")
-              options.add_argument("--disable-gpu")
-              options.add_argument(r"--user-data-dir=C:\chromeprofile\data")
-
-              driver = uc.Chrome(options=options, version_main=145)
-
-              try:
-                  print("Sayfa aciliyor...")
-                  driver.get("https://minecraft-mp.com/server/328354/vote/")
-
-                  print("25 saniye bekleniyor...")
-                  time.sleep(25)
-
-                  print("Nickname yaziliyor...")
-                  wait = WebDriverWait(driver, 30)
-                  nick_field = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
-                  time.sleep(1)
-                  nick_field.click()
-                  time.sleep(0.5)
-                  nick_field.send_keys(minecraft_nick)
-
-                  time.sleep(1)
-
-                  print("I agree isaretleniyor...")
-                  accept_check = driver.find_element(By.ID, "accept")
-                  if not accept_check.is_selected():
-                      accept_check.click()
-
-                  print("Token bekleniyor (15 saniye)...")
-                  time.sleep(15)
-
-                  token = driver.execute_script("""
-                      let inputs = document.querySelectorAll('input[name="cf-turnstile-response"]');
-                      for(let inp of inputs) {
-                          if(inp.value && inp.value.length > 10) return inp.value;
-                      }
-                      return null;
-                  """)
-
-                  if token:
-                      print("Token alindi!")
-                  else:
-                      print("Token yok, tiklama deneniyor...")
-                      driver.execute_script("""
-                          var el = document.querySelector('.cf-turnstile');
-                          el.scrollIntoView({block: 'center'});
-                      """)
-                      time.sleep(2)
-                      driver.execute_script("""
-                          var el = document.querySelector('.cf-turnstile');
-                          var rect = el.getBoundingClientRect();
-                          document.elementFromPoint(rect.left + 30, rect.top + 32).click();
-                      """)
-                      time.sleep(10)
-
-                  print("Vote butonuna basiliyor...")
-                  vote_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Vote')]")
-                  vote_button.click()
-
-                  time.sleep(5)
-
-                  page_text = driver.find_element(By.TAG_NAME, "body").text
-                  if "success" in page_text.lower() or "thank" in page_text.lower():
-                      print(f"BASARILI: {minecraft_nick} oy gonderildi!")
-                  else:
-                      print(f"Sonuc: {page_text[:300]}")
-
-              except Exception as e:
-                  print(f"Hata: {e}")
-              finally:
-                  driver.quit()
-
-          oy_at("goblin45345")
-          '@ | Out-File -FilePath bot.py -Encoding utf8
-
-      - name: RDP Hazirlik
-        run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-
-      - name: Botu Calistir
-        run: python bot.py
+          Invoke-WebRequest -Uri "https://github.com/serjs/socks5-server/releases/download/v0.0.3/socks5-windows-amd64.zip" -OutFile "socks5.zip"
+          Expand-Archive socks5.zip -DestinationPath socks5
+          Start-Process -FilePath ".\socks5\socks5-windows-amd64.exe" -ArgumentList "-p 1080" -WindowStyle Hidden
+          Start-Sleep 3
+          Write-Host "MAKINE 1 PROXY HAZIR" -ForegroundColor Green
 
       - name: Bore Tunnel Baslat
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
-          Write-Host "RDP BAGLANTI BILGILERI:" -ForegroundColor Green
-          .\bore.exe local 3389 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 1 - PROXY BAGLANTI:" -ForegroundColor Green
+          Write-Host "bore.pub:PORT seklinde gorunecek" -ForegroundColor Yellow
+          Write-Host "Chrome komutu: chrome.exe --proxy-server=socks5://bore.pub:PORT" -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore\bore.exe local 1080 --to bore.pub
+
+  makine2:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Proxy Kur ve Baslat
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/serjs/socks5-server/releases/download/v0.0.3/socks5-windows-amd64.zip" -OutFile "socks5.zip"
+          Expand-Archive socks5.zip -DestinationPath socks5
+          Start-Process -FilePath ".\socks5\socks5-windows-amd64.exe" -ArgumentList "-p 1080" -WindowStyle Hidden
+          Start-Sleep 3
+          Write-Host "MAKINE 2 PROXY HAZIR" -ForegroundColor Green
+
+      - name: Bore Tunnel Baslat
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 2 - PROXY BAGLANTI:" -ForegroundColor Green
+          Write-Host "bore.pub:PORT seklinde gorunecek" -ForegroundColor Yellow
+          Write-Host "Chrome komutu: chrome.exe --proxy-server=socks5://bore.pub:PORT" -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore\bore.exe local 1080 --to bore.pub
+
+  makine3:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Proxy Kur ve Baslat
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/serjs/socks5-server/releases/download/v0.0.3/socks5-windows-amd64.zip" -OutFile "socks5.zip"
+          Expand-Archive socks5.zip -DestinationPath socks5
+          Start-Process -FilePath ".\socks5\socks5-windows-amd64.exe" -ArgumentList "-p 1080" -WindowStyle Hidden
+          Start-Sleep 3
+          Write-Host "MAKINE 3 PROXY HAZIR" -ForegroundColor Green
+
+      - name: Bore Tunnel Baslat
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath bore
+          Write-Host "========================================" -ForegroundColor Green
+          Write-Host "MAKINE 3 - PROXY BAGLANTI:" -ForegroundColor Green
+          Write-Host "bore.pub:PORT seklinde gorunecek" -ForegroundColor Yellow
+          Write-Host "Chrome komutu: chrome.exe --proxy-server=socks5://bore.pub:PORT" -ForegroundColor Cyan
+          Write-Host "========================================" -ForegroundColor Green
+          .\bore\bore.exe local 1080 --to bore.pub
