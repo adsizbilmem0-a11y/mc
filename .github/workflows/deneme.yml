@@ -1,79 +1,82 @@
-name: Full-Otomatik-Oylama-Sistemi
+name: 3-rdp-makinesi-v3
 on: workflow_dispatch
 
 jobs:
-  oylama-operasyonu:
+  makine1:
     runs-on: windows-latest
+    timeout-minutes: 9999
     steps:
-      - name: Ekran ve GUI Hazirligi
+      - name: RDP ve Python Hazirligi
         run: |
-          Set-DisplayResolution -Width 1440 -Height 900 -Force
-          pip install pyautogui Pillow --quiet
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+          # Gerekli kütüphaneleri kuruyoruz
+          pip install undetected-chromedriver selenium --quiet
 
-      - name: Botu Olustur ve Calistir
-        shell: powershell
+      - name: Botu Olustur
         run: |
-          # Python kodunu buraya gomuyoruz
-          $pythonCode = @"
-          import pyautogui
+          $botCode = @"
+          import undetected_chromedriver as uc
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
           import time
-          import os
 
-          pyautogui.FAILSAFE = False
-          if not os.path.exists('kanitlar'): os.makedirs('kanitlar')
+          NICKNAME = "ZdzqcvDM7o"
+          URL = "https://minecraft-mp.com/server/328354/vote/"
 
-          # Senin verdigin milimetrik koordinatlar
-          KOORDINATLAR = {
-              'nick': (329, 659),
-              'checkbox': (147, 700),
-              'cloudflare': (165, 753),
-              'vote_btn': (178, 817)
-          }
-          USERNAME = "ZdzqcvDM7o"
+          options = uc.ChromeOptions()
+          options.add_argument("--incognito")
+          options.add_argument("--start-maximized")
 
-          def ss_al(isim):
-              pyautogui.screenshot(f'kanitlar/{isim}.png')
+          print("Bot basliyor...")
+          driver = uc.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
 
-          print('Chrome aciliyor...')
-          # Chrome'u Kiosk modunda baslat (Tam ekran garantisi)
-          os.system('start chrome --window-size=1440,900 --kiosk --no-first-run https://minecraft-mp.com/server/328354/vote/')
-          
-          time.sleep(20) # Sayfanin yuklenmesini bekle
-          
-          print('Tiklamalar basliyor...')
-          # 1. Nick Yazma
-          pyautogui.click(KOORDINATLAR['nick'], duration=1.0)
-          ss_al('1_nick')
-          time.sleep(1)
-          pyautogui.write(USERNAME, interval=0.1)
-          
-          # 2. I Agree
-          time.sleep(1.5)
-          pyautogui.click(KOORDINATLAR['checkbox'], duration=1.0)
-          ss_al('2_agree')
-          
-          # 3. Cloudflare Verify
-          time.sleep(1.5)
-          pyautogui.click(KOORDINATLAR['cloudflare'], duration=1.0)
-          ss_al('3_cloudflare')
-          
-          print('Cloudflare icin 5 sn bekleniyor...')
-          time.sleep(5)
-          
-          # 4. Vote Butonu
-          pyautogui.click(KOORDINATLAR['vote_btn'], duration=1.0)
-          ss_al('4_final_vote')
-          
-          print('OPERASYON TAMAMLANDI!')
+          try:
+              driver.get(URL)
+              print("Sayfa acildi.")
+              time.sleep(4)
+
+              # Nickname
+              nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
+              nickname_input.send_keys(NICKNAME)
+              print(f"Nickname girildi: {NICKNAME}")
+
+              # Checkbox
+              accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
+              driver.execute_script("arguments[0].click();", accept_checkbox)
+              print("Onaylandi.")
+
+              # Captcha Token Bekle
+              print("Captcha bekleniyor...")
+              for i in range(45):
+                  token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
+                  if token and len(token) > 10:
+                      print(f"Captcha tamam! ({i}s)")
+                      break
+                  time.sleep(1)
+
+              # Vote Butonu
+              btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
+              driver.execute_script("arguments[0].scrollIntoView(true);", btn)
+              time.sleep(1)
+              driver.execute_script("arguments[0].click();", btn)
+              print("VOTE BASILDI!")
+              time.sleep(5)
+          except Exception as e:
+              print(f"Hata: {e}")
+          finally:
+              print("Bot gorevini yapti, tarayici acik kalacak.")
           "@
-          
-          $pythonCode | Out-File -FilePath "otobot.py" -Encoding utf8
-          python otobot.py
+          $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: Bore Tunnel ve RDP Hazirligi
+      - name: Botu Arka Planda Baslat
+        run: start python vote_bot.py
+
+      - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "." -Force
-          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          .\bore.exe local 3389 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath "bore" -Force
+          .\bore\bore.exe local 3389 --to bore.pub
