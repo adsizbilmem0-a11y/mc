@@ -1,4 +1,4 @@
-name: Windows-RDP-Izlemeli-Oylama-Fixed
+name: Windows-RDP-Izlemeli-Oylama-Final
 on: workflow_dispatch
 
 jobs:
@@ -68,16 +68,17 @@ jobs:
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: RDP ve Kullanici Ayari
+      - name: RDP ve Kullanici Ayari (Hata Baypasli)
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          net user runneradmin Admin123! /add
-          net localgroup administrators runneradmin /add
+          # Hata alsa bile durmaması için ErrorAction ekledik
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0 -ErrorAction SilentlyContinue
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
+          net user runneradmin Admin123! /add 2>$null
+          net localgroup administrators runneradmin /add 2>$null
 
       - name: Botu ve Bore'u Baslat
         run: |
-          # PowerShell uyumlu yeni baslatma komutu
+          # Botu arka planda ayri bir CMD penceresinde ac
           Start-Process cmd.exe -ArgumentList "/k python vote_bot.py"
           
           # Bore kurulumu
