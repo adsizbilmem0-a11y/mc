@@ -1,82 +1,69 @@
-name: 3-rdp-makinesi
+name: 3-rdp-makinesi-full-otomatik
 on: workflow_dispatch
 
 jobs:
   makine1:
     runs-on: windows-latest
-    timeout-minutes: 9999
     steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
-
-      - name: RDP ve Ekran Ayarla
+      - name: RDP ve Ekran Cozunurlugu Ayarla
         run: |
-          # RDP Aktif Et
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          
-          # Sistemdeki hazir komutla cozunurlugu 1440x900 yap
+          # Ekranı 1440x900 yap ve ölçeklemeyi %100'e zorla
           Set-DisplayResolution -Width 1440 -Height 900 -Force
           
-      - name: Chrome ve Bot Hazirlik
+      - name: Bot Dosyasini Otomatik Olustur
         run: |
-          $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--start-maximized", "--no-first-run", $url
+          $botCode = @"
+          import pyautogui
+          import time
+          import random
+
+          pyautogui.FAILSAFE = False
+          # Ekrani 1440x900 olarak baz aliyoruz
+          KOORDINATLAR = {
+              "nick": (335, 558),
+              "checkbox": (150, 600),
+              "cloudflare": (163, 654),
+              "vote_btn": (176, 716)
+          }
+          USERNAME = "ZdzqcvDM7o"
+
+          def operasyon():
+              time.sleep(120) # Sen baglanana kadar 2 dk bekle
+              pyautogui.moveTo(0, 0, duration=1.0) # Reset
+              pyautogui.click(720, 450) # Focus
+              time.sleep(2)
+              
+              pyautogui.click(KOORDINATLAR['nick'], duration=1.2)
+              for harf in USERNAME:
+                  pyautogui.write(harf)
+                  time.sleep(0.1)
+              
+              time.sleep(2)
+              pyautogui.click(KOORDINATLAR['checkbox'], duration=1.0)
+              time.sleep(2)
+              pyautogui.click(KOORDINATLAR['cloudflare'], duration=1.0)
+              
+              print("Cloudflare bekleniyor...")
+              time.sleep(35) 
+              
+              pyautogui.click(KOORDINATLAR['vote_btn'], duration=1.2)
+              print("VOTE BASILDI!")
+
+          if __name__ == "__main__":
+              operasyon()
+          "@
+          $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
+
+      - name: Chrome ve Botu Baslat
+        run: |
           pip install pyautogui --quiet
-          # Botu arka planda baslat (Bot icinde 120sn bekler)
-          Start-Process python -ArgumentList "vote_bot.py"
-          
-      - name: Start Bore Tunnel
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "." -Force
-          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force -ErrorAction SilentlyContinue
-          .\bore.exe local 3389 --to bore.pub
-
-  makine2:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
-      - name: RDP ve Ekran Ayarla
-        run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          Set-DisplayResolution -Width 1440 -Height 900 -Force
-      - name: Chrome ve Bot Hazirlik
-        run: |
-          $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--start-maximized", $url
-          pip install pyautogui --quiet
-          Start-Process python -ArgumentList "vote_bot.py"
-      - name: Start Bore Tunnel
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "." -Force
-          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force -ErrorAction SilentlyContinue
-          .\bore.exe local 3389 --to bore.pub
-
-  makine3:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
-      - name: RDP ve Ekran Ayarla
-        run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          Set-DisplayResolution -Width 1440 -Height 900 -Force
-      - name: Chrome ve Bot Hazirlik
-        run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
           Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--start-maximized", $url
-          pip install pyautogui --quiet
           Start-Process python -ArgumentList "vote_bot.py"
+
       - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
