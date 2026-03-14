@@ -8,28 +8,23 @@ jobs:
     steps:
       - name: Kodlari Cek
         uses: actions/checkout@v4
-
       - name: RDP Hazirla
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-      
-      - name: Chrome ve Bot Baslat
+      - name: Chrome ve Bot Hazirlik
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
           Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", "--no-first-run", $url
           pip install pyautogui --quiet
-          # Botu arka planda baslatir ki tunel adimina gecebilsin
-          Start-Process python -ArgumentList "vote_bot.py", "1"
-      
+          # Botu arka planda baslat (Bot kendi icinde 120sn bekleyecek)
+          Start-Process python -ArgumentList "vote_bot.py"
       - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
           Expand-Archive bore.zip -DestinationPath "." -Force
-          # Bore.exe'yi nerede olursa olsun bulup ana dizine ceker (Hata cozucu)
           Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force -ErrorAction SilentlyContinue
-          Write-Host "MAKINE 1 - TUNNEL ACILIYOR..." -ForegroundColor Cyan
           .\bore.exe local 3389 --to bore.pub
 
   makine2:
@@ -43,12 +38,12 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-      - name: Chrome ve Bot
+      - name: Chrome ve Bot Hazirlik
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
           Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
           pip install pyautogui --quiet
-          Start-Process python -ArgumentList "vote_bot.py", "2"
+          Start-Process python -ArgumentList "vote_bot.py"
       - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
@@ -67,12 +62,12 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-      - name: Chrome ve Bot
+      - name: Chrome ve Bot Hazirlik
         run: |
           $url = "https://minecraft-mp.com/server/328354/vote/"
           Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--start-maximized", $url
           pip install pyautogui --quiet
-          Start-Process python -ArgumentList "vote_bot.py", "3"
+          Start-Process python -ArgumentList "vote_bot.py"
       - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
