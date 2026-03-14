@@ -1,27 +1,28 @@
-name: 3-rdp-makinesi-full-otomatik
+name: 24-Saat-Kesintisiz-Bot
 on: workflow_dispatch
 
 jobs:
-  makine1:
+  oylama-botu:
     runs-on: windows-latest
     steps:
-      - name: RDP ve Ekran Cozunurlugu Ayarla
+      - name: Sanal Ekran ve GUI Aktif Et
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          # Ekranı 1440x900 yap ve ölçeklemeyi %100'e zorla
+          # Windows'un kullanıcı oturumunu açık tutması ve GUI'yi kapatmaması için
+          Set-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System' -Name "dontdisplaylastusername" -Value 1
+          # Ekranı senin koordinatlarına (1440x900) çiviliyoruz
           Set-DisplayResolution -Width 1440 -Height 900 -Force
-          
-      - name: Bot Dosyasini Otomatik Olustur
+
+      - name: Bot Dosyasini Hazirla
         run: |
           $botCode = @"
           import pyautogui
           import time
           import random
+          import sys
 
+          # EKRAN OLMASA BILE CALISMAYI ZORLA
           pyautogui.FAILSAFE = False
-          # Ekrani 1440x900 olarak baz aliyoruz
+
           KOORDINATLAR = {
               "nick": (335, 558),
               "checkbox": (150, 600),
@@ -31,42 +32,45 @@ jobs:
           USERNAME = "ZdzqcvDM7o"
 
           def operasyon():
-              time.sleep(120) # Sen baglanana kadar 2 dk bekle
-              pyautogui.moveTo(0, 0, duration=1.0) # Reset
-              pyautogui.click(720, 450) # Focus
+              print("Bot basliyor... Sen baglanmasan da ben buradayim.")
+              time.sleep(30) # Sistemin ve Chrome'un tamamen oturması için
+              
+              # Sanal masaüstünü odakla
+              pyautogui.click(720, 450)
               time.sleep(2)
               
-              pyautogui.click(KOORDINATLAR['nick'], duration=1.2)
+              # 1. Nick Yazma
+              pyautogui.moveTo(KOORDINATLAR['nick'], duration=1.5)
+              pyautogui.click()
+              time.sleep(2)
               for harf in USERNAME:
                   pyautogui.write(harf)
                   time.sleep(0.1)
               
-              time.sleep(2)
-              pyautogui.click(KOORDINATLAR['checkbox'], duration=1.0)
-              time.sleep(2)
-              pyautogui.click(KOORDINATLAR['cloudflare'], duration=1.0)
+              # 2. Checkbox
+              time.sleep(3)
+              pyautogui.click(KOORDINATLAR['checkbox'], duration=1.2)
               
-              print("Cloudflare bekleniyor...")
-              time.sleep(35) 
+              # 3. Cloudflare (Burasi kritik, biraz uzun bekleyelim)
+              time.sleep(3)
+              pyautogui.click(KOORDINATLAR['cloudflare'], duration=1.2)
+              print("Cloudflare onaylaniyor, 45 saniye pusudayim...")
+              time.sleep(45) 
               
-              pyautogui.click(KOORDINATLAR['vote_btn'], duration=1.2)
-              print("VOTE BASILDI!")
+              # 4. Vote Butonu
+              pyautogui.click(KOORDINATLAR['vote_btn'], duration=1.5)
+              print("VOTE BASILDI! Gorev tamam.")
 
           if __name__ == "__main__":
               operasyon()
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: Chrome ve Botu Baslat
+      - name: Chrome ve Botu Patlat
         run: |
           pip install pyautogui --quiet
           $url = "https://minecraft-mp.com/server/328354/vote/"
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--start-maximized", $url
-          Start-Process python -ArgumentList "vote_bot.py"
-
-      - name: Start Bore Tunnel
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "." -Force
-          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force -ErrorAction SilentlyContinue
-          .\bore.exe local 3389 --to bore.pub
+          # Chrome'u sanal masaüstünde senin istediğin boyutta açıyoruz
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--no-sandbox", "--disable-setuid-sandbox", $url
+          # Botu çalıştır ve logları GitHub ekranında göster
+          python vote_bot.py
