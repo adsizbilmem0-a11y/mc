@@ -6,14 +6,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: Chrome Surumunu v146+ Guncelle
+      - name: Chrome Surumunu v146+ Guncelle (Garantili Link)
         run: |
-          $chromeUrl = "https://dl.google.com/chrome/install/latest/googlechromestandaloneenterprise64.msi"
-          $outPath = "C:\chrome_update.msi"
-          Write-Host "En guncel Chrome indiriliyor..." -ForegroundColor Cyan
-          Invoke-WebRequest -Uri $chromeUrl -OutFile $outPath
-          Write-Host "Kurulum baslatiliyor (Sessizce)..." -ForegroundColor Cyan
-          Start-Process msiexec.exe -ArgumentList "/i $outPath /quiet /norestart" -Wait
+          # En garantili Chrome indirme linki
+          $chromeUrl = "https://dl.google.com/chrome/tag/s/appguid%3D%7B8A69D345-D564-463C-AFF1-A69D9E530F96%7D%26iid%3D%7B1EDD4F9D-70C7-4A47-84C2-4E9D58E9E3C5%7D%26lang%3Dtr%26browser%3D3%26usagestats%3D0%26appname%3DGoogle%2520Chrome%26needsadmin%3Dtrue%26ap%3Dx64-stable-statsdef_1%26installdataindex%3Ddefaultbrowser/update2/installers/ChromeStandaloneSetup64.exe"
+          $outPath = "C:\chrome_setup.exe"
+          Write-Host "Chrome v146+ indiriliyor..." -ForegroundColor Cyan
+          # User-Agent ekleyerek Google'ın bot sanmasını engelliyoruz
+          Invoke-WebRequest -Uri $chromeUrl -OutFile $outPath -UserAgent "Mozilla/5.0"
+          Write-Host "Kurulum baslatiliyor..." -ForegroundColor Cyan
+          Start-Process $outPath -ArgumentList "/silent", "/install" -Wait
           Write-Host "Chrome basariyla guncellendi!" -ForegroundColor Green
 
       - name: RDP ve Python Ayarlari
@@ -21,7 +23,6 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          # undetected-chromedriver ve selenium kurulumu
           pip install undetected-chromedriver selenium --quiet
 
       - name: Botu Olustur (Senin Kodun)
@@ -39,57 +40,43 @@ jobs:
           options = uc.ChromeOptions()
           options.add_argument("--incognito")
           options.add_argument("--start-maximized")
-          # GitHub runner'da hata vermemesi icin gereken ek ayarlar
           options.add_argument("--no-sandbox")
           options.add_argument("--disable-dev-shm-usage")
 
           print("--- UC BOT HAZIRLANIYOR ---")
           try:
-              # Sistemdeki guncel Chrome yolunu belirterek aciyoruz
-              driver = uc.Chrome(options=options, browser_executable_path=r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+              # Guncellenen Chrome yolunu kontrol ederek ac
+              driver = uc.Chrome(options=options)
               wait = WebDriverWait(driver, 25)
 
-              print("Tarayici acildi, siteye gidiliyor...")
+              print("Siteye gidiliyor...")
               driver.get(URL)
               time.sleep(5)
 
-              # Nickname doldur
               nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
-              nickname_input.click()
-              nickname_input.clear()
               nickname_input.send_keys(NICKNAME)
               print(f"Nickname girildi: {NICKNAME}")
 
-              # Checkbox onayla
               accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
-              if not accept_checkbox.is_selected():
-                  driver.execute_script("arguments[0].click();", accept_checkbox)
-                  print("Sozlesme onaylandi.")
+              driver.execute_script("arguments[0].click();", accept_checkbox)
 
-              # Cloudflare bekleme dongusu
-              print("Cloudflare / Turnstile bekleniyor...")
+              print("Cloudflare bekleniyor...")
               for i in range(45):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
-                      print(f"✅ Captcha gecildi! ({i}s)")
+                      print(f"✅ Captcha tamam! ({i}s)")
                       break
                   time.sleep(1)
 
               time.sleep(2)
-              # Vote Butonuna bas
               btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
-              driver.execute_script("arguments[0].scrollIntoView(true);", btn)
-              time.sleep(1)
               driver.execute_script("arguments[0].click();", btn)
               print("✅ VOTE BASILDI!")
-              
               time.sleep(10)
-              print("Islem bitti, pencere senin icin acik bekliyor.")
           except Exception as e:
-              print(f"❌ HATA: {e}")
+              print(f"Hata: {e}")
           finally:
-              # Kapanmamasi icin input ekliyoruz
-              input("Kapatmak icin RDP'den Enter'a bas...")
+              input("Kapatmak icin Enter...")
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
@@ -100,5 +87,4 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
           Expand-Archive bore.zip -DestinationPath "bore_dist" -Force
-          Write-Host "RDP BAGLANTISI ICIN BORE ADRESINI BEKLE..." -ForegroundColor Yellow
           .\bore_dist\bore.exe local 3389 --to bore.pub
