@@ -1,47 +1,47 @@
-name: Linux-Hizli-Oylama-Botu-V2
+name: Windows-Kesin-Surum-Uyumu
 on: workflow_dispatch
 
 jobs:
-  oylama:
-    runs-on: ubuntu-latest
+  oylama-windows:
+    runs-on: windows-latest
     steps:
-      - name: Sistemi ve Chrome'u Hazirla
+      - name: Python ve Kutuphane Kurulumu
         run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          pip3 install undetected-chromedriver selenium --quiet
+          pip install undetected-chromedriver selenium --quiet
 
-      - name: Botu Olustur
+      - name: Botu Olustur (Windows Uyumlu)
         run: |
-          cat <<EOF > vote_bot.py
+          $botCode = @"
           import undetected_chromedriver as uc
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
           from selenium.webdriver.support import expected_conditions as EC
           import time
-          import sys
+          import os
 
           NICKNAME = "ZdzqcvDM7o"
           URL = "https://minecraft-mp.com/server/328354/vote/"
 
           options = uc.ChromeOptions()
-          options.add_argument("--headless") 
-          options.add_argument("--no-sandbox")
-          options.add_argument("--disable-dev-shm-usage")
           options.add_argument("--incognito")
+          options.add_argument("--headless") # Windows'ta da headless hizi artirir
+          options.add_argument("--no-sandbox")
 
-          print("--- UC BOT BASLATILDI (LINUX) ---")
-          driver = None
+          print("--- BOT HAZIRLANIYOR ---")
+          
           try:
-              # version_main=145 diyerek GitHub'ın Chrome sürümüne sabitliyoruz
-              driver = uc.Chrome(options=options, version_main=145)
+              # Surum hatasini engellemek icin sistemdeki Chrome yolunu zorluyoruz
+              # GitHub Windows runner'larda Chrome yolu genelde budur:
+              chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+              
+              # UC'ye surumu 145 olarak zorla diyoruz
+              driver = uc.Chrome(options=options, browser_executable_path=chrome_path, version_main=145)
               wait = WebDriverWait(driver, 30)
 
+              print("Tarayici acildi, siteye gidiliyor...")
               driver.get(URL)
-              print("Sayfa acildi.")
-              time.sleep(4)
-
-              # Nickname doldur
+              
+              # Nickname
               nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
               nickname_input.send_keys(NICKNAME)
               print(f"Nickname girildi: {NICKNAME}")
@@ -49,41 +49,37 @@ jobs:
               # Checkbox
               accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
               driver.execute_script("arguments[0].click();", accept_checkbox)
-              print("Sozlesme onaylandi.")
 
               # Captcha bekle
-              print("Captcha bekleniyor...")
+              print("Cloudflare bekleniyor...")
               for i in range(40):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
-                      print(f"✅ Captcha cozuldu! ({i+1}s)")
+                      print(f"✅ Captcha gecildi! ({i}s)")
                       break
                   time.sleep(1)
 
-              # Butona tikla
-              btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")))
-              driver.execute_script("arguments[0].scrollIntoView(true);", btn)
-              time.sleep(1)
+              # Vote Butonuna bas
+              btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
               driver.execute_script("arguments[0].click();", btn)
               print("✅ VOTE BASILDI!")
-
+              
               time.sleep(5)
-              print("Sonuc URL:", driver.current_url)
-              driver.save_screenshot('sonuc.png')
-
+              driver.save_screenshot('sonuc_windows.png')
           except Exception as e:
-              print(f"❌ Hata: {e}")
+              print(f"❌ HATA: {e}")
           finally:
-              if driver:
+              if 'driver' in locals():
                   driver.quit()
-          EOF
+          "@
+          $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
       - name: Botu Calistir
-        run: python3 vote_bot.py
+        run: python vote_bot.py
 
       - name: Kanit Goruntusu
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oylama-sonucu
-          path: sonuc.png
+          name: oylama-sonucu-windows
+          path: sonuc_windows.png
