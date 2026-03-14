@@ -1,45 +1,85 @@
-name: GitHub-Proxy-Cikisi
+name: Linux-Hizli-Oylama-Botu
 on: workflow_dispatch
 
 jobs:
-  proxy-server:
+  oylama-operasyonu:
     runs-on: ubuntu-latest
     steps:
-      - name: Proxy Sunucusunu Kur (Gost)
+      - name: Sistemi ve Chrome'u Hazirla
         run: |
-          # Gost indiriliyor
-          wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.1/gost-linux-amd64-2.11.1.gz
-          gunzip gost-linux-amd64-2.11.1.gz
-          chmod +x gost-linux-amd64-2.11.1
-          
-          # Arka planda SOCKS5 ve HTTP proxy başlatalım (Port 8080)
-          # Kullanıcı adı ve şifre eklemiyorum ki bağlanman kolay olsun
-          ./gost-linux-amd64-2.11.1 -L=:8080 > gost.log 2>&1 &
-          echo "Proxy sunucusu 8080 portunda hazir!"
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          pip3 install undetected-chromedriver selenium --quiet
 
-      - name: Bore Tunnel ile Disari Ac
+      - name: Botu Olustur (Senin Kodun - Linux Modu)
         run: |
-          wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          chmod +x bore
-          
-          # Proxy portunu (8080) bore.pub'a yönlendir
-          ./bore local 8080 --to bore.pub 2>&1 | tee bore.log &
-          
-          sleep 5
-          PORT=$(grep -oP 'remote_port=\K\d+' bore.log | head -1)
+          cat <<EOF > vote_bot.py
+          import undetected_chromedriver as uc
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          import time
 
-          echo ""
-          echo "===================================================="
-          echo "🌐 PROXY BAGLANTI BILGILERI"
-          echo "===================================================="
-          echo "Sunucu (Host): bore.pub"
-          echo "Port: $PORT"
-          echo "Tür: HTTP veya SOCKS5 (İkisi de çalışır)"
-          echo "===================================================="
-          echo "📌 NASIL KULLANILIR?"
-          echo "Windows Ayarlar -> Proxy -> Manuel Proxy Kurulumu"
-          echo "Adres: bore.pub  |  Port: $PORT"
-          echo "===================================================="
-          
-          tail -f bore.log
+          NICKNAME = "ZdzqcvDM7o"
+          URL = "https://minecraft-mp.com/server/328354/vote/"
+
+          options = uc.ChromeOptions()
+          # Hız ve düşük internet için kritik ayarlar
+          options.add_argument('--headless') # Görüntü aktarmaz, internetini yemez
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--disable-gpu')
+
+          print("--- BOT BASLATILDI (LINUX HEADLESS) ---")
+          try:
+              driver = uc.Chrome(options=options)
+              wait = WebDriverWait(driver, 30)
+
+              print("Siteye gidiliyor...")
+              driver.get(URL)
+              
+              # Nickname
+              nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
+              nickname_input.send_keys(NICKNAME)
+              print(f"✅ Nickname girildi: {NICKNAME}")
+
+              # Checkbox
+              accept_checkbox = driver.find_element(By.ID, "accept")
+              driver.execute_script("arguments[0].click();", accept_checkbox)
+              print("✅ Sozlesme onaylandi.")
+
+              # Cloudflare Turnstile Bekle
+              print("Cloudflare cozuluyor, lütfen bekleyin...")
+              for i in range(45):
+                  token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
+                  if token and len(token) > 10:
+                      print(f"🔥 Cloudflare Gecildi! ({i}s)")
+                      break
+                  time.sleep(1)
+
+              # Vote Butonuna Tikla
+              btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
+              driver.execute_script("arguments[0].click();", btn)
+              print("🚀 VOTE BUTONUNA BASILDI!")
+              
+              time.sleep(5)
+              print("Son Durum URL:", driver.current_url)
+              
+              # Kanıt için ekran görüntüsü al (Loglarda görebilirsin)
+              driver.save_screenshot('sonuc.png')
+              print("Ekran görüntüsü 'sonuc.png' olarak kaydedildi.")
+
+          except Exception as e:
+              print(f"❌ HATA OLUSTU: {e}")
+          finally:
+              driver.quit()
+          EOF
+
+      - name: Botu Calistir
+        run: python3 vote_bot.py
+
+      - name: Ekran Goruntusunu Yukle (Opsiyonel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: oylama-kaniti
+          path: sonuc.png
