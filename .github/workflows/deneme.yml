@@ -1,4 +1,4 @@
-name: 3-rdp-makinesi-v3
+name: 3-rdp-makinesi-v3-final
 on: workflow_dispatch
 
 jobs:
@@ -11,10 +11,9 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          # Gerekli kütüphaneleri kuruyoruz
           pip install undetected-chromedriver selenium --quiet
 
-      - name: Botu Olustur
+      - name: UC Botu Olustur
         run: |
           $botCode = @"
           import undetected_chromedriver as uc
@@ -29,54 +28,58 @@ jobs:
           options = uc.ChromeOptions()
           options.add_argument("--incognito")
           options.add_argument("--start-maximized")
+          options.add_argument("--disable-popup-blocking")
 
-          print("Bot basliyor...")
+          print("--- UC BOT BASLADI ---")
           driver = uc.Chrome(options=options)
-          wait = WebDriverWait(driver, 20)
+          wait = WebDriverWait(driver, 30)
 
           try:
               driver.get(URL)
-              print("Sayfa acildi.")
-              time.sleep(4)
+              print("Sayfa acildi, 5sn bekleniyor...")
+              time.sleep(5)
 
-              # Nickname
-              nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
+              # Nickname doldur
+              nickname_input = wait.until(EC.element_to_be_clickable((By.ID, "nickname")))
               nickname_input.send_keys(NICKNAME)
               print(f"Nickname girildi: {NICKNAME}")
 
-              # Checkbox
+              # Checkbox onayla
               accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
               driver.execute_script("arguments[0].click();", accept_checkbox)
-              print("Onaylandi.")
+              print("Sozlesme onaylandi.")
 
-              # Captcha Token Bekle
-              print("Captcha bekleniyor...")
+              # Cloudflare Turnstile Kontrolü
+              print("Cloudflare cozulmesi bekleniyor (Max 45sn)...")
               for i in range(45):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
-                      print(f"Captcha tamam! ({i}s)")
+                      print(f"✅ Cloudflare Gecildi! ({i}s)")
                       break
                   time.sleep(1)
-
-              # Vote Butonu
+              
+              time.sleep(2)
+              # Vote Butonuna Tikla
               btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
               driver.execute_script("arguments[0].scrollIntoView(true);", btn)
               time.sleep(1)
               driver.execute_script("arguments[0].click();", btn)
-              print("VOTE BASILDI!")
-              time.sleep(5)
+              print("✅ VOTE BUTONUNA BASILDI!")
+              time.sleep(10)
+              print("Son Durum URL:", driver.current_url)
+
           except Exception as e:
-              print(f"Hata: {e}")
+              print(f"❌ HATA: {e}")
           finally:
-              print("Bot gorevini yapti, tarayici acik kalacak.")
+              print("Islem bitti, Bore baslatiliyor...")
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: Botu Arka Planda Baslat
+      - name: Botu Calistir
         run: start python vote_bot.py
 
       - name: Start Bore Tunnel
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "bore" -Force
-          .\bore\bore.exe local 3389 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath "bore_dist" -Force
+          .\bore_dist\bore.exe local 3389 --to bore.pub
