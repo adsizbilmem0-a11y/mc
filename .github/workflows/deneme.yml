@@ -8,22 +8,19 @@ jobs:
     steps:
       - name: Kutuphaneleri Kur
         run: |
-          pip install setuptools undetected-chromedriver pyautogui opencv-python
-      
+          pip install setuptools undetected-chromedriver
+
       - name: Foto Kodunu Olustur
         run: |
           @'
           import undetected_chromedriver as uc
-          import pyautogui
           import time
           import os
           import sys
           sys.stdout.reconfigure(encoding='utf-8')
-          desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
+          kayit_yeri = r"D:\a\mc\mc"
           def operasyon():
               try:
-                  print("--- Masaustu fotosu aliniyor ---")
-                  pyautogui.screenshot(os.path.join(desktop, "1_masaustu_genel_m1.png"))
                   options = uc.ChromeOptions()
                   options.add_argument("--start-maximized")
                   options.add_argument("--disable-gpu")
@@ -31,7 +28,8 @@ jobs:
                   driver.get("https://minecraft-mp.com/server/328354/vote/")
                   print("--- Sayfa yukleniyor (25 sn) ---")
                   time.sleep(25)
-                  driver.save_screenshot(os.path.join(desktop, "2_tarayici_aktif_m1.png"))
+                  driver.save_screenshot(os.path.join(kayit_yeri, "2_tarayici_aktif_m1.png"))
+                  print("Foto kaydedildi!")
                   driver.quit()
               except Exception as e:
                   print(f"Hata: {e}")
@@ -61,27 +59,28 @@ jobs:
     steps:
       - name: Kutuphaneleri Kur
         run: |
-          pip install setuptools undetected-chromedriver pyautogui opencv-python
-      
+          pip install setuptools undetected-chromedriver
+
       - name: Foto Kodunu Olustur
         run: |
           @'
           import undetected_chromedriver as uc
-          import pyautogui
           import time
           import os
           import sys
           sys.stdout.reconfigure(encoding='utf-8')
-          desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
+          kayit_yeri = r"D:\a\mc\mc"
           def operasyon():
               try:
-                  pyautogui.screenshot(os.path.join(desktop, "1_masaustu_genel_m2.png"))
                   options = uc.ChromeOptions()
                   options.add_argument("--start-maximized")
+                  options.add_argument("--disable-gpu")
                   driver = uc.Chrome(options=options, version_main=145)
                   driver.get("https://minecraft-mp.com/server/328354/vote/")
+                  print("--- Sayfa yukleniyor (25 sn) ---")
                   time.sleep(25)
-                  driver.save_screenshot(os.path.join(desktop, "2_tarayici_aktif_m2.png"))
+                  driver.save_screenshot(os.path.join(kayit_yeri, "2_tarayici_aktif_m2.png"))
+                  print("Foto kaydedildi!")
                   driver.quit()
               except Exception as e:
                   print(f"Hata: {e}")
@@ -111,27 +110,28 @@ jobs:
     steps:
       - name: Kutuphaneleri Kur
         run: |
-          pip install setuptools undetected-chromedriver pyautogui opencv-python
-      
+          pip install setuptools undetected-chromedriver
+
       - name: Foto Kodunu Olustur
         run: |
           @'
           import undetected_chromedriver as uc
-          import pyautogui
           import time
           import os
           import sys
           sys.stdout.reconfigure(encoding='utf-8')
-          desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
+          kayit_yeri = r"D:\a\mc\mc"
           def operasyon():
               try:
-                  pyautogui.screenshot(os.path.join(desktop, "1_masaustu_genel_m3.png"))
                   options = uc.ChromeOptions()
                   options.add_argument("--start-maximized")
+                  options.add_argument("--disable-gpu")
                   driver = uc.Chrome(options=options, version_main=145)
                   driver.get("https://minecraft-mp.com/server/328354/vote/")
+                  print("--- Sayfa yukleniyor (25 sn) ---")
                   time.sleep(25)
-                  driver.save_screenshot(os.path.join(desktop, "2_tarayici_aktif_m3.png"))
+                  driver.save_screenshot(os.path.join(kayit_yeri, "2_tarayici_aktif_m3.png"))
+                  print("Foto kaydedildi!")
                   driver.quit()
               except Exception as e:
                   print(f"Hata: {e}")
