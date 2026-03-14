@@ -1,19 +1,20 @@
-name: 3-rdp-makinesi-v3-final
+name: Tek-Makine-Canli-Izle
 on: workflow_dispatch
 
 jobs:
-  makine1:
+  izleme-makinesi:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: RDP ve Python Hazirligi
+      - name: RDP ve Python Ayarlari
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+          # UC ve Selenium kurulumu
           pip install undetected-chromedriver selenium --quiet
 
-      - name: UC Botu Olustur
+      - name: Botu Olustur (Senin Kodun)
         run: |
           $botCode = @"
           import undetected_chromedriver as uc
@@ -28,58 +29,62 @@ jobs:
           options = uc.ChromeOptions()
           options.add_argument("--incognito")
           options.add_argument("--start-maximized")
-          options.add_argument("--disable-popup-blocking")
 
-          print("--- UC BOT BASLADI ---")
+          print("--- BOT HAZIRLANIYOR ---")
+          # Sürüm uyumluluğu için otomatik patcher
           driver = uc.Chrome(options=options)
-          wait = WebDriverWait(driver, 30)
+          wait = WebDriverWait(driver, 25)
 
           try:
+              print("Tarayici aciliyor...")
               driver.get(URL)
-              print("Sayfa acildi, 5sn bekleniyor...")
               time.sleep(5)
 
               # Nickname doldur
-              nickname_input = wait.until(EC.element_to_be_clickable((By.ID, "nickname")))
+              nickname_input = wait.until(EC.presence_of_element_located((By.ID, "nickname")))
+              nickname_input.click()
+              nickname_input.clear()
               nickname_input.send_keys(NICKNAME)
               print(f"Nickname girildi: {NICKNAME}")
 
-              # Checkbox onayla
+              # Checkbox
               accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
-              driver.execute_script("arguments[0].click();", accept_checkbox)
-              print("Sozlesme onaylandi.")
+              if not accept_checkbox.is_selected():
+                  driver.execute_script("arguments[0].click();", accept_checkbox)
+                  print("Sozlesme onaylandi.")
 
-              # Cloudflare Turnstile Kontrolü
-              print("Cloudflare cozulmesi bekleniyor (Max 45sn)...")
-              for i in range(45):
+              # Captcha bekle
+              print("Cloudflare / Captcha bekleniyor...")
+              for i in range(40):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
-                      print(f"✅ Cloudflare Gecildi! ({i}s)")
+                      print(f"✅ Captcha tamam! ({i}s)")
                       break
                   time.sleep(1)
-              
+
               time.sleep(2)
-              # Vote Butonuna Tikla
+              # Butona tikla
               btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
               driver.execute_script("arguments[0].scrollIntoView(true);", btn)
               time.sleep(1)
               driver.execute_script("arguments[0].click();", btn)
-              print("✅ VOTE BUTONUNA BASILDI!")
-              time.sleep(10)
-              print("Son Durum URL:", driver.current_url)
+              print("✅ VOTE BASILDI!")
 
+              time.sleep(10)
+              print("Islem bitti, pencere acik kaliyor.")
           except Exception as e:
-              print(f"❌ HATA: {e}")
+              print(f"Hata: {e}")
           finally:
-              print("Islem bitti, Bore baslatiliyor...")
+              # Sen gor diye quit() yapmiyoruz
+              input("Kapatmak icin Enter...")
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: Botu Calistir
+      - name: Botu Calistir (Sessizce)
         run: start python vote_bot.py
 
-      - name: Start Bore Tunnel
+      - name: Bore Tunnel Baslat
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "bore_dist" -Force
-          .\bore_dist\bore.exe local 3389 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath "bore_exe" -Force
+          .\bore_exe\bore.exe local 3389 --to bore.pub
