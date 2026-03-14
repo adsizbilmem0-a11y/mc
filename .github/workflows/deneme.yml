@@ -1,4 +1,4 @@
-name: Windows-RDP-Izlemeli-Oylama
+name: Windows-RDP-Izlemeli-Oylama-Fixed
 on: workflow_dispatch
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Hazirlik
         run: pip install setuptools undetected-chromedriver selenium --quiet
 
-      - name: Botu Yaz
+      - name: Bot Dosyasini Yaz
         run: |
           $botCode = @"
           import undetected_chromedriver as uc
@@ -23,7 +23,6 @@ jobs:
           options = uc.ChromeOptions()
           options.add_argument("--incognito")
           options.add_argument("--start-maximized")
-          # RDP ile izleyecegin icin HEADLESS'i KALDIRDIK
 
           print("--- RDP BEKLENIYOR ---")
           input("RDP ile baglandiysan ve hazirsan ENTER'a bas...")
@@ -37,7 +36,7 @@ jobs:
               print("Siteye gidiliyor...")
               driver.get("https://minecraft-mp.com/server/328354/vote/")
               
-              print("Formun yuklenmesi bekleniyor. Cloudflare cikarsa RDP'den tikla!")
+              print("Cloudflare cikarsa RDP'den tikla!")
               
               nickname_input = wait.until(EC.element_to_be_clickable((By.ID, "nickname")))
               nickname_input.send_keys("ZdzqcvDM7o")
@@ -46,8 +45,8 @@ jobs:
               accept_cb = driver.find_element(By.ID, "accept")
               driver.execute_script("arguments[0].click();", accept_cb)
               
-              print("Captcha (Turnstile) bekleniyor... Manuel de cozebilirsin.")
-              for i in range(120): # 2 dakika sure verdik
+              print("Turnstile (Captcha) bekleniyor...")
+              for i in range(120):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
                       print(f"Token alindi! ({i}s)")
@@ -59,12 +58,11 @@ jobs:
               print("VOTE BASILDI!")
               
               time.sleep(10)
-              print("Islem bitti. Ekrani inceleyebilirsin.")
-              input("Tarayiciyi kapatmak ve workflowu bitirmek icin buraya ENTER bas...")
+              input("Islem bitti. Kapatmak icin ENTER bas...")
 
           except Exception as e:
               print(f"HATA: {str(e)}")
-              input("Hatayi incelemek icin ENTER'a basmadan kapatma...")
+              input("Hata incelemesi icin ENTER bekle...")
           finally:
               if driver: driver.quit()
           "@
@@ -74,14 +72,16 @@ jobs:
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
+          net user runneradmin Admin123! /add
+          net localgroup administrators runneradmin /add
 
       - name: Botu ve Bore'u Baslat
         run: |
-          # Botu ayri pencerede baslat (RDP baglaninca gorebilmen icin)
-          start cmd /k "python vote_bot.py"
+          # PowerShell uyumlu yeni baslatma komutu
+          Start-Process cmd.exe -ArgumentList "/k python vote_bot.py"
           
-          # Bore indir ve calistir
+          # Bore kurulumu
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
           Expand-Archive bore.zip -DestinationPath "bore_dist" -Force
+          Write-Host "RDP BAGLANTISI ICIN PORT BEKLENIYOR..." -ForegroundColor Yellow
           .\bore_dist\bore.exe local 3389 --to bore.pub
