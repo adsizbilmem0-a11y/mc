@@ -35,11 +35,32 @@ jobs:
                   print("10 saniye bekleniyor...")
                   time.sleep(10)
 
-                  print("Cloudflare kutucuguna tiklaniyor...")
-                  driver.execute_script("document.elementFromPoint(60, 667).click();")
+                  print("Cloudflare kutucuguna scroll edip tiklaniyor...")
+                  driver.execute_script("""
+                      var el = document.querySelector('.cf-turnstile');
+                      el.scrollIntoView({block: 'center'});
+                  """)
+                  time.sleep(2)
+                  driver.execute_script("""
+                      var el = document.querySelector('.cf-turnstile');
+                      var rect = el.getBoundingClientRect();
+                      document.elementFromPoint(rect.left + 30, rect.top + 32).click();
+                  """)
+                  print("Tiklandi! 10 saniye bekleniyor...")
+                  time.sleep(10)
 
-                  print("3 saniye bekleniyor...")
-                  time.sleep(3)
+                  token = driver.execute_script("""
+                      let inputs = document.querySelectorAll('input[name="cf-turnstile-response"]');
+                      for(let inp of inputs) {
+                          if(inp.value && inp.value.length > 10) return inp.value;
+                      }
+                      return null;
+                  """)
+
+                  if token:
+                      print("Token alindi!")
+                  else:
+                      print("Token yok, yine de deniyor...")
 
                   print("Nickname yaziliyor...")
                   wait = WebDriverWait(driver, 30)
@@ -54,19 +75,6 @@ jobs:
                       driver.execute_script("arguments[0].click();", accept_check)
 
                   time.sleep(2)
-
-                  token = driver.execute_script("""
-                      let inputs = document.querySelectorAll('input[name="cf-turnstile-response"]');
-                      for(let inp of inputs) {
-                          if(inp.value && inp.value.length > 10) return inp.value;
-                      }
-                      return null;
-                  """)
-
-                  if token:
-                      print("Token alindi!")
-                  else:
-                      print("Token yok, yine de deniyor...")
 
                   print("Vote butonuna basiliyor...")
                   vote_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Vote')]")
