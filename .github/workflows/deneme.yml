@@ -1,4 +1,4 @@
-name: Tek-Makine-Canli-Izle
+name: Tek-Makine-Canli-Izle-Guncel-Chrome
 on: workflow_dispatch
 
 jobs:
@@ -6,12 +6,22 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
+      - name: Chrome Surumunu v146+ Guncelle
+        run: |
+          $chromeUrl = "https://dl.google.com/chrome/install/latest/googlechromestandaloneenterprise64.msi"
+          $outPath = "C:\chrome_update.msi"
+          Write-Host "En guncel Chrome indiriliyor..." -ForegroundColor Cyan
+          Invoke-WebRequest -Uri $chromeUrl -OutFile $outPath
+          Write-Host "Kurulum baslatiliyor (Sessizce)..." -ForegroundColor Cyan
+          Start-Process msiexec.exe -ArgumentList "/i $outPath /quiet /norestart" -Wait
+          Write-Host "Chrome basariyla guncellendi!" -ForegroundColor Green
+
       - name: RDP ve Python Ayarlari
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          # UC ve Selenium kurulumu
+          # undetected-chromedriver ve selenium kurulumu
           pip install undetected-chromedriver selenium --quiet
 
       - name: Botu Olustur (Senin Kodun)
@@ -29,14 +39,17 @@ jobs:
           options = uc.ChromeOptions()
           options.add_argument("--incognito")
           options.add_argument("--start-maximized")
+          # GitHub runner'da hata vermemesi icin gereken ek ayarlar
+          options.add_argument("--no-sandbox")
+          options.add_argument("--disable-dev-shm-usage")
 
-          print("--- BOT HAZIRLANIYOR ---")
-          # Sürüm uyumluluğu için otomatik patcher
-          driver = uc.Chrome(options=options)
-          wait = WebDriverWait(driver, 25)
-
+          print("--- UC BOT HAZIRLANIYOR ---")
           try:
-              print("Tarayici aciliyor...")
+              # Sistemdeki guncel Chrome yolunu belirterek aciyoruz
+              driver = uc.Chrome(options=options, browser_executable_path=r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+              wait = WebDriverWait(driver, 25)
+
+              print("Tarayici acildi, siteye gidiliyor...")
               driver.get(URL)
               time.sleep(5)
 
@@ -47,44 +60,45 @@ jobs:
               nickname_input.send_keys(NICKNAME)
               print(f"Nickname girildi: {NICKNAME}")
 
-              # Checkbox
+              # Checkbox onayla
               accept_checkbox = wait.until(EC.presence_of_element_located((By.ID, "accept")))
               if not accept_checkbox.is_selected():
                   driver.execute_script("arguments[0].click();", accept_checkbox)
                   print("Sozlesme onaylandi.")
 
-              # Captcha bekle
-              print("Cloudflare / Captcha bekleniyor...")
-              for i in range(40):
+              # Cloudflare bekleme dongusu
+              print("Cloudflare / Turnstile bekleniyor...")
+              for i in range(45):
                   token = driver.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]').value;")
                   if token and len(token) > 10:
-                      print(f"✅ Captcha tamam! ({i}s)")
+                      print(f"✅ Captcha gecildi! ({i}s)")
                       break
                   time.sleep(1)
 
               time.sleep(2)
-              # Butona tikla
+              # Vote Butonuna bas
               btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'][form='vote_form']")
               driver.execute_script("arguments[0].scrollIntoView(true);", btn)
               time.sleep(1)
               driver.execute_script("arguments[0].click();", btn)
               print("✅ VOTE BASILDI!")
-
+              
               time.sleep(10)
-              print("Islem bitti, pencere acik kaliyor.")
+              print("Islem bitti, pencere senin icin acik bekliyor.")
           except Exception as e:
-              print(f"Hata: {e}")
+              print(f"❌ HATA: {e}")
           finally:
-              # Sen gor diye quit() yapmiyoruz
-              input("Kapatmak icin Enter...")
+              # Kapanmamasi icin input ekliyoruz
+              input("Kapatmak icin RDP'den Enter'a bas...")
           "@
           $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
 
-      - name: Botu Calistir (Sessizce)
+      - name: Botu Baslat
         run: start python vote_bot.py
 
       - name: Bore Tunnel Baslat
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath "bore_exe" -Force
-          .\bore_exe\bore.exe local 3389 --to bore.pub
+          Expand-Archive bore.zip -DestinationPath "bore_dist" -Force
+          Write-Host "RDP BAGLANTISI ICIN BORE ADRESINI BEKLE..." -ForegroundColor Yellow
+          .\bore_dist\bore.exe local 3389 --to bore.pub
