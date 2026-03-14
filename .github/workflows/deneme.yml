@@ -1,16 +1,20 @@
-name: Bot-SS-Kanit-Sistemi
+name: Full-Otomatik-Oylama-Sistemi
 on: workflow_dispatch
 
 jobs:
-  oylama-botu:
+  oylama-operasyonu:
     runs-on: windows-latest
     steps:
-      - name: Ekran Cozunurlugu Ayarla
-        run: Set-DisplayResolution -Width 1440 -Height 900 -Force
-
-      - name: Bot Dosyasini Hazirla (SS Alma Ozellikli)
+      - name: Ekran ve GUI Hazirligi
         run: |
-          $botCode = @"
+          Set-DisplayResolution -Width 1440 -Height 900 -Force
+          pip install pyautogui Pillow --quiet
+
+      - name: Botu Olustur ve Calistir
+        shell: powershell
+        run: |
+          # Python kodunu buraya gomuyoruz
+          $pythonCode = @"
           import pyautogui
           import time
           import os
@@ -18,74 +22,58 @@ jobs:
           pyautogui.FAILSAFE = False
           if not os.path.exists('kanitlar'): os.makedirs('kanitlar')
 
+          # Senin verdigin milimetrik koordinatlar
           KOORDINATLAR = {
-              "nick": (335, 558),
-              "checkbox": (150, 600),
-              "cloudflare": (163, 654),
-              "vote_btn": (176, 716)
+              'nick': (329, 659),
+              'checkbox': (147, 700),
+              'cloudflare': (165, 753),
+              'vote_btn': (178, 817)
           }
           USERNAME = "ZdzqcvDM7o"
 
           def ss_al(isim):
-              pyautogui.screenshot(f"kanitlar/{isim}.png")
-              print(f"SS alindi: {isim}")
+              pyautogui.screenshot(f'kanitlar/{isim}.png')
 
-          def operasyon():
-              print("Bot 30 saniye sonra basliyor...")
-              time.sleep(30)
-              
-              # 1. Nick Yazma
-              pyautogui.moveTo(KOORDINATLAR['nick'], duration=1.2)
-              ss_al("1_nick_oncesi")
-              pyautogui.click()
-              time.sleep(1)
-              for harf in USERNAME:
-                  pyautogui.write(harf)
-                  time.sleep(0.1)
-              
-              # 2. Checkbox
-              time.sleep(2)
-              pyautogui.moveTo(KOORDINATLAR['checkbox'], duration=1.0)
-              ss_al("2_checkbox_oncesi")
-              pyautogui.click()
-              
-              # 3. Cloudflare
-              time.sleep(2)
-              pyautogui.moveTo(KOORDINATLAR['cloudflare'], duration=1.0)
-              ss_al("3_cloudflare_oncesi")
-              pyautogui.click()
-              
-              print("Cloudflare icin 5 saniye bekleniyor...")
-              time.sleep(5) # İsteğin üzerine 5 saniye
-              
-              # 4. Vote Butonu
-              pyautogui.moveTo(KOORDINATLAR['vote_btn'], duration=1.0)
-              ss_al("4_vote_oncesi")
-              pyautogui.click()
-              
-              time.sleep(2)
-              ss_al("5_final_durum")
-              print("Gorev bitti, SS'ler kaydedildi.")
-
-          if __name__ == "__main__":
-              operasyon()
+          print('Chrome aciliyor...')
+          # Chrome'u Kiosk modunda baslat (Tam ekran garantisi)
+          os.system('start chrome --window-size=1440,900 --kiosk --no-first-run https://minecraft-mp.com/server/328354/vote/')
+          
+          time.sleep(20) # Sayfanin yuklenmesini bekle
+          
+          print('Tiklamalar basliyor...')
+          # 1. Nick Yazma
+          pyautogui.click(KOORDINATLAR['nick'], duration=1.0)
+          ss_al('1_nick')
+          time.sleep(1)
+          pyautogui.write(USERNAME, interval=0.1)
+          
+          # 2. I Agree
+          time.sleep(1.5)
+          pyautogui.click(KOORDINATLAR['checkbox'], duration=1.0)
+          ss_al('2_agree')
+          
+          # 3. Cloudflare Verify
+          time.sleep(1.5)
+          pyautogui.click(KOORDINATLAR['cloudflare'], duration=1.0)
+          ss_al('3_cloudflare')
+          
+          print('Cloudflare icin 5 sn bekleniyor...')
+          time.sleep(5)
+          
+          # 4. Vote Butonu
+          pyautogui.click(KOORDINATLAR['vote_btn'], duration=1.0)
+          ss_al('4_final_vote')
+          
+          print('OPERASYON TAMAMLANDI!')
           "@
-          $botCode | Out-File -FilePath "vote_bot.py" -Encoding utf8
+          
+          $pythonCode | Out-File -FilePath "otobot.py" -Encoding utf8
+          python otobot.py
 
-      - name: Chrome ve Botu Patlat
-        run: |
-          pip install pyautogui Pillow --quiet
-          $url = "https://minecraft-mp.com/server/328354/vote/"
-          # Chrome'u kesinlikle 1440x900 ve sadec bu linkle aciyoruz
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--window-size=1440,900", "--start-maximized", "--no-first-run", "--disable-notifications", $url
-          python vote_bot.py
-
-      - name: Bore Tunnel Kur ve Bekle
+      - name: Bore Tunnel ve RDP Hazirligi
         run: |
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
           Expand-Archive bore.zip -DestinationPath "." -Force
-          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force -ErrorAction SilentlyContinue
-          # RDP sifresini ayarla
+          Get-ChildItem -Filter "bore.exe" -Recurse | Move-Item -Destination "." -Force
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Admin123!" -Force)
-          Write-Host "BOT ISINI BITIRDI. Gelip SS'lere bakabilirsin!" -ForegroundColor Green
           .\bore.exe local 3389 --to bore.pub
