@@ -1,25 +1,44 @@
 import pyautogui
 import time
-import sys
-import os
+import random
 
-def koordinat_avcisi():
-    desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-    dosya_yolu = os.path.join(desktop, "KOORDINAT_NOTLARI.txt")
+# Senin Paint ile bulduğun milimetrik noktalar
+KOORDINATLAR = {
+    "nick": (335, 558),
+    "checkbox": (150, 600),
+    "cloudflare": (163, 654),
+    "vote_btn": (176, 716)
+}
+
+USERNAME = "ZdzqcvDM7o"
+
+def operasyon():
+    # Tunel acildiktan sonra senin baglanman icin 2 dakika bekler
+    print("Bore tuneli acildi. RDP ile baglanman icin 120 saniye bekleniyor...")
+    time.sleep(120) 
     
-    print("Koordinat avcisi basladi! 20 saniye boyunca fareyi kutularin uzerinde tut.")
+    print("--- TIKLAMA ISLEMI BASLIYOR ---")
     
-    with open(dosya_yolu, "w") as f:
-        f.write("=== KOORDINAT LISTESI ===\n")
-        for i in range(20):
-            pos = pyautogui.position()
-            satir = f"Saniye {i+1}: X={pos.x}, Y={pos.y}\n"
-            f.write(satir)
-            # Terminale de bas (Eger gorebilirsen)
-            print(satir.strip())
-            time.sleep(1)
-            
-    print(f"Koordinatlar masaustune kaydedildi: {dosya_yolu}")
+    # 1. Nick Yazma
+    pyautogui.click(KOORDINATLAR["nick"], duration=1.0)
+    time.sleep(1)
+    for harf in USERNAME:
+        pyautogui.write(harf)
+        time.sleep(random.uniform(0.1, 0.3))
+    
+    # 2. Checkbox (I agree)
+    time.sleep(1.5)
+    pyautogui.click(KOORDINATLAR["checkbox"], duration=0.8)
+    
+    # 3. Cloudflare
+    time.sleep(2)
+    pyautogui.click(KOORDINATLAR["cloudflare"], duration=0.8)
+    print("Cloudflare onaylanmasi bekleniyor (30 saniye)...")
+    time.sleep(30) # Cloudflare icin biraz daha uzun tuttum garantici olsun
+    
+    # 4. Vote Butonu
+    pyautogui.click(KOORDINATLAR["vote_btn"], duration=1.0)
+    print("Bitti! Oylama yapildi.")
 
 if __name__ == "__main__":
-    koordinat_avcisi()
+    operasyon()
