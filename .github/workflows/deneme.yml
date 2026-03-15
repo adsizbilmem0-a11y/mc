@@ -7,25 +7,23 @@ jobs:
     steps:
       - name: Baslat
         run: |
-          # Gost (Proxy Sunucusu) kurulumu
+          # Gost: Windows'taki '.\gost-windows-amd64.exe -L :8080' komutunun Linux hali
           wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
           gunzip gost-linux-amd64-2.11.5.gz
           chmod +x gost-linux-amd64-2.11.5
-          # Hem SOCKS5 hem HTTP destekli başlatıyoruz
-          ./gost-linux-amd64-2.11.5 -L socks5://:8080 -L http://:8080 > gost.log 2>&1 &
+          ./gost-linux-amd64-2.11.5 -L :8080 > gost.log 2>&1 &
           
-          # Bore (Tünel) kurulumu
+          # Bore: Windows'taki '.\bore.exe local 8080 --to bore.pub' komutunun Linux hali
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 8080 --to bore.pub > bore.log 2>&1 &
           
           sleep 12
-          # Portu temizle ve al
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
           
-          # Firebase'e Gönder (Senin yapına uygun)
+          # Firebase'e Gönder (Direkt bore.pub ve portu kaydediyoruz)
           curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
           tail -f bore.log
 
@@ -37,7 +35,7 @@ jobs:
           wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
           gunzip gost-linux-amd64-2.11.5.gz
           chmod +x gost-linux-amd64-2.11.5
-          ./gost-linux-amd64-2.11.5 -L socks5://:8080 -L http://:8080 > gost.log 2>&1 &
+          ./gost-linux-amd64-2.11.5 -L :8080 > gost.log 2>&1 &
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
@@ -56,7 +54,7 @@ jobs:
           wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
           gunzip gost-linux-amd64-2.11.5.gz
           chmod +x gost-linux-amd64-2.11.5
-          ./gost-linux-amd64-2.11.5 -L socks5://:8080 -L http://:8080 > gost.log 2>&1 &
+          ./gost-linux-amd64-2.11.5 -L :8080 > gost.log 2>&1 &
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
