@@ -1,40 +1,38 @@
-name: Linux SSH Proxy Node
-on: workflow_dispatch
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 9999
-
-    steps:
-      - name: Setup SSH & User
-        run: |
-          echo "runner:Admin123!" | sudo chpasswd
-          sudo systemctl start ssh
-
-      - name: Start Bore & Report to Firebase
+- name: Start Bore & Report to Firebase
         run: |
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           
-          # Tüneli başlat
+          # Tüneli başlat (Logları temiz tutmak için dosyaya yazıyoruz)
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
           
-          # Portun oluşması için bekle
-          sleep 8
-          PORT=$(grep -oP 'remote_port=\K\d+' bore.log | head -1)
-          
+          # Port gelene kadar maksimum 30 saniye boyunca döngüde bekle
+          echo "Port bekleniyor..."
+          for i in {1..15}; do
+            PORT=$(grep -oP 'remote_port=\K\d+' bore.log | head -1)
+            if [ ! -z "$PORT" ]; then
+              break
+            fi
+            echo "Deneme $i: Port henüz atanmadı, bekleniyor..."
+            sleep 2
+          done
+
           if [ -z "$PORT" ]; then
-            echo "Port alınamadı!"
+            echo "HATA: Bore tüneli başlatılamadı veya port alınamadı!"
+            cat bore.log # Hatanın ne olduğunu görmek için logu ekrana bas
             exit 1
           fi
 
-          # Firebase'e veriyi gönder (NodeID olarak GitHub Run ID kullanıyoruz)
-          FIREBASE_URL="https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/${{ github.run_id }}.json"
-          curl -X PUT -d "{\"address\": \"bore.pub\", \"port\": \"$PORT\", \"user\": \"runner\", \"pass\": \"Admin123!\", \"status\": \"online\"}" $FIREBASE_URL
+          echo "Bulunan Port: $PORT"
 
-          echo "Proxy bilgileri Firebase'e iletildi: bore.pub:$PORT"
+          # Firebase'e gönder (Statik ID yerine her zaman benzersiz olan run_id kullanalım)
+          FIREBASE_URL="https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/${{ github.run_id }}.json"
+          curl -X PUT -H "Content-Type: application/json" \
+               -d "{\"address\": \"bore.pub\", \"port\": \"$PORT\", \"user\": \"runner\", \"pass\": \"Admin123!\", \"status\": \"online\", \"timestamp\": \"$(date)\"}" \
+               $FIREBASE_URL
+
+          echo "Proxy bilgileri Firebase'e başarıyla iletildi: bore.pub:$PORT"
           
-          # Akışı canlı tut
+          # Tüneli canlı tut
           tail -f bore.log
