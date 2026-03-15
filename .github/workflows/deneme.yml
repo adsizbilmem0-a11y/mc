@@ -1,4 +1,4 @@
-name: 3-Sabit-Proxy-Makinesi
+name: 3-Sabit-Hizli-Proxy
 on: workflow_dispatch
 
 jobs:
@@ -11,13 +11,20 @@ jobs:
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+          
+          echo "Proxy1 portu aranıyor..."
+          for i in {1..20}; do
+            sleep 2
+            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+            if [ ! -z "$PORT" ]; then break; fi
+          done
+          
+          if [ -z "$PORT" ]; then exit 1; fi
           curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
           tail -f bore.log
 
   proxy2:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Baslat
         run: |
@@ -25,13 +32,20 @@ jobs:
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+          
+          echo "Proxy2 portu aranıyor..."
+          for i in {1..20}; do
+            sleep 2
+            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+            if [ ! -z "$PORT" ]; then break; fi
+          done
+          
+          if [ -z "$PORT" ]; then exit 1; fi
           curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy2.json"
           tail -f bore.log
 
   proxy3:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Baslat
         run: |
@@ -39,7 +53,14 @@ jobs:
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+          
+          echo "Proxy3 portu aranıyor..."
+          for i in {1..20}; do
+            sleep 2
+            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+            if [ ! -z "$PORT" ]; then break; fi
+          done
+          
+          if [ -z "$PORT" ]; then exit 1; fi
           curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy3.json"
           tail -f bore.log
