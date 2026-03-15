@@ -1,4 +1,4 @@
-name: 3-Sabit-Hizli-Proxy
+name: 3-Sabit-Garantili-Proxy
 on: workflow_dispatch
 
 jobs:
@@ -7,20 +7,22 @@ jobs:
     steps:
       - name: Baslat
         run: |
+          # SSH Sifre ve Yetki Ayari
+          echo "runner:Admin123!" | sudo chpasswd
+          sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+          
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
           
-          echo "Proxy1 portu aranıyor..."
-          for i in {1..20}; do
-            sleep 2
-            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-            if [ ! -z "$PORT" ]; then break; fi
-          done
+          sleep 12
+          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           
-          if [ -z "$PORT" ]; then exit 1; fi
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
+          # Zaman damgasi ile kaydet (En yeniyi bulmak icin)
+          TIMESTAMP=$(date +%s)
+          curl -X PUT -d "{\"url\": \"bore.pub:$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
           tail -f bore.log
 
   proxy2:
@@ -28,20 +30,19 @@ jobs:
     steps:
       - name: Baslat
         run: |
+          echo "runner:Admin123!" | sudo chpasswd
+          sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+          
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
           
-          echo "Proxy2 portu aranıyor..."
-          for i in {1..20}; do
-            sleep 2
-            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-            if [ ! -z "$PORT" ]; then break; fi
-          done
-          
-          if [ -z "$PORT" ]; then exit 1; fi
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy2.json"
+          sleep 12
+          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+          TIMESTAMP=$(date +%s)
+          curl -X PUT -d "{\"url\": \"bore.pub:$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy2.json"
           tail -f bore.log
 
   proxy3:
@@ -49,18 +50,17 @@ jobs:
     steps:
       - name: Baslat
         run: |
+          echo "runner:Admin123!" | sudo chpasswd
+          sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+          
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
           
-          echo "Proxy3 portu aranıyor..."
-          for i in {1..20}; do
-            sleep 2
-            PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-            if [ ! -z "$PORT" ]; then break; fi
-          done
-          
-          if [ -z "$PORT" ]; then exit 1; fi
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy3.json"
+          sleep 12
+          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
+          TIMESTAMP=$(date +%s)
+          curl -X PUT -d "{\"url\": \"bore.pub:$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy3.json"
           tail -f bore.log
