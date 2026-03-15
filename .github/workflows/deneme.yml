@@ -9,6 +9,8 @@ jobs:
       - name: Baslat
         run: |
           pip install requests
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -47,19 +49,20 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
               if m:
                   adres = f"bore.pub:{m.group(1)}"
-                  requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine1.json", json={"adres": adres})
-                  print(f"FIREBASE KAYDEDILDI: {adres}", flush=True)
+                  try:
+                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine1.json", json={"adres": adres})
+                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
+                  except Exception as e:
+                      print(f"Firebase hatasi: {e}", flush=True)
                   break
           proc.wait()
           '@ | Out-File -FilePath run.py -Encoding utf8
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
           python run.py
 
   makine2:
@@ -69,6 +72,8 @@ jobs:
       - name: Baslat
         run: |
           pip install requests
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -107,19 +112,20 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
               if m:
                   adres = f"bore.pub:{m.group(1)}"
-                  requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine2.json", json={"adres": adres})
-                  print(f"FIREBASE KAYDEDILDI: {adres}", flush=True)
+                  try:
+                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine2.json", json={"adres": adres})
+                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
+                  except Exception as e:
+                      print(f"Firebase hatasi: {e}", flush=True)
                   break
           proc.wait()
           '@ | Out-File -FilePath run.py -Encoding utf8
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
           python run.py
 
   makine3:
@@ -129,6 +135,8 @@ jobs:
       - name: Baslat
         run: |
           pip install requests
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive bore.zip -DestinationPath .
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -167,17 +175,18 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen(["bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
               if m:
                   adres = f"bore.pub:{m.group(1)}"
-                  requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine3.json", json={"adres": adres})
-                  print(f"FIREBASE KAYDEDILDI: {adres}", flush=True)
+                  try:
+                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine3.json", json={"adres": adres})
+                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
+                  except Exception as e:
+                      print(f"Firebase hatasi: {e}", flush=True)
                   break
           proc.wait()
           '@ | Out-File -FilePath run.py -Encoding utf8
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
           python run.py
