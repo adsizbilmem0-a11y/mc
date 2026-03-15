@@ -7,7 +7,6 @@ jobs:
     steps:
       - name: Baslat
         run: |
-          # SSH Sifre ve Yetki Ayari
           echo "runner:Admin123!" | sudo chpasswd
           sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sudo systemctl restart ssh
@@ -20,8 +19,9 @@ jobs:
           sleep 12
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           
-          # Zaman damgasi ile kaydet (En yeniyi bulmak icin)
+          # Mevcut Unix zaman damgasını al
           TIMESTAMP=$(date +%s)
+          # Firebase'e hem URL'i hem de siralamak icin zamani gönder
           curl -X PUT -d "{\"url\": \"bore.pub:$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
           tail -f bore.log
 
@@ -33,12 +33,10 @@ jobs:
           echo "runner:Admin123!" | sudo chpasswd
           sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sudo systemctl restart ssh
-          
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          
           sleep 12
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
@@ -53,12 +51,10 @@ jobs:
           echo "runner:Admin123!" | sudo chpasswd
           sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sudo systemctl restart ssh
-          
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          
           sleep 12
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
