@@ -1,4 +1,4 @@
-name: 6-Proxy-Makineleri
+name: 3-Sabit-Proxy-Makinesi
 on: workflow_dispatch
 
 jobs:
@@ -42,46 +42,4 @@ jobs:
           sleep 12
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy3.json"
-          tail -f bore.log
-
-  proxy4:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Baslat
-        run: |
-          wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          chmod +x bore
-          ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy4.json"
-          tail -f bore.log
-
-  proxy5:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Baslat
-        run: |
-          wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          chmod +x bore
-          ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy5.json"
-          tail -f bore.log
-
-  proxy6:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Baslat
-        run: |
-          wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
-          chmod +x bore
-          ./bore local 22 --to bore.pub > bore.log 2>&1 &
-          sleep 12
-          PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
-          curl -X PUT -d "\"bore.pub:$PORT\"" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy6.json"
           tail -f bore.log
