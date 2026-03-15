@@ -1,204 +1,40 @@
-name: 20-proxy-makinesi
+name: Linux SSH Proxy Node
 on: workflow_dispatch
 
 jobs:
-  makine1:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
     timeout-minutes: 9999
+
     steps:
-      - name: Baslat
+      - name: Setup SSH & User
         run: |
-          pip install requests
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          @'
-          import socket, threading, select, subprocess, re, requests, glob
+          echo "runner:Admin123!" | sudo chpasswd
+          sudo systemctl start ssh
 
-          def handle(client):
-              try:
-                  data = client.recv(256)
-                  client.send(b"\x05\x00")
-                  data = client.recv(256)
-                  addr_type = data[3]
-                  if addr_type == 1:
-                      addr = socket.inet_ntoa(data[4:8])
-                      port = int.from_bytes(data[8:10], "big")
-                  elif addr_type == 3:
-                      ln = data[4]
-                      addr = data[5:5+ln].decode()
-                      port = int.from_bytes(data[5+ln:7+ln], "big")
-                  else:
-                      client.close()
-                      return
-                  remote = socket.socket()
-                  remote.connect((addr, port))
-                  client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
-                  while True:
-                      r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r: break
-                      for s in r:
-                          d = s.recv(4096)
-                          if not d: return
-                          (remote if s is client else client).sendall(d)
-              except: pass
-              finally: client.close()
-
-          srv = socket.socket()
-          srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-          srv.bind(("0.0.0.0", 1080))
-          srv.listen(100)
-          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
-
-          bore_list = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
-          bore_exe = bore_list[0] if bore_list else ".\\bore\\bore.exe"
-          print(f"bore: {bore_exe}", flush=True)
-
-          proc = subprocess.Popen([bore_exe, "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-          for line in proc.stdout:
-              print(line, end="", flush=True)
-              m = re.search(r"remote_port=(\d+)", line)
-              if m:
-                  adres = f"bore.pub:{m.group(1)}"
-                  try:
-                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine1.json", json={"adres": adres})
-                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
-                  except Exception as e:
-                      print(f"Firebase hatasi: {e}", flush=True)
-                  break
-          proc.wait()
-          '@ | Out-File -FilePath run.py -Encoding utf8
-          python run.py
-
-  makine2:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Baslat
+      - name: Start Bore & Report to Firebase
         run: |
-          pip install requests
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          @'
-          import socket, threading, select, subprocess, re, requests, glob
+          wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
+          tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
+          chmod +x bore
+          
+          # Tüneli başlat
+          ./bore local 22 --to bore.pub > bore.log 2>&1 &
+          
+          # Portun oluşması için bekle
+          sleep 8
+          PORT=$(grep -oP 'remote_port=\K\d+' bore.log | head -1)
+          
+          if [ -z "$PORT" ]; then
+            echo "Port alınamadı!"
+            exit 1
+          fi
 
-          def handle(client):
-              try:
-                  data = client.recv(256)
-                  client.send(b"\x05\x00")
-                  data = client.recv(256)
-                  addr_type = data[3]
-                  if addr_type == 1:
-                      addr = socket.inet_ntoa(data[4:8])
-                      port = int.from_bytes(data[8:10], "big")
-                  elif addr_type == 3:
-                      ln = data[4]
-                      addr = data[5:5+ln].decode()
-                      port = int.from_bytes(data[5+ln:7+ln], "big")
-                  else:
-                      client.close()
-                      return
-                  remote = socket.socket()
-                  remote.connect((addr, port))
-                  client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
-                  while True:
-                      r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r: break
-                      for s in r:
-                          d = s.recv(4096)
-                          if not d: return
-                          (remote if s is client else client).sendall(d)
-              except: pass
-              finally: client.close()
+          # Firebase'e veriyi gönder (NodeID olarak GitHub Run ID kullanıyoruz)
+          FIREBASE_URL="https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/${{ github.run_id }}.json"
+          curl -X PUT -d "{\"address\": \"bore.pub\", \"port\": \"$PORT\", \"user\": \"runner\", \"pass\": \"Admin123!\", \"status\": \"online\"}" $FIREBASE_URL
 
-          srv = socket.socket()
-          srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-          srv.bind(("0.0.0.0", 1080))
-          srv.listen(100)
-          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
-
-          bore_list = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
-          bore_exe = bore_list[0] if bore_list else ".\\bore\\bore.exe"
-          print(f"bore: {bore_exe}", flush=True)
-
-          proc = subprocess.Popen([bore_exe, "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-          for line in proc.stdout:
-              print(line, end="", flush=True)
-              m = re.search(r"remote_port=(\d+)", line)
-              if m:
-                  adres = f"bore.pub:{m.group(1)}"
-                  try:
-                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine2.json", json={"adres": adres})
-                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
-                  except Exception as e:
-                      print(f"Firebase hatasi: {e}", flush=True)
-                  break
-          proc.wait()
-          '@ | Out-File -FilePath run.py -Encoding utf8
-          python run.py
-
-  makine3:
-    runs-on: windows-latest
-    timeout-minutes: 9999
-    steps:
-      - name: Baslat
-        run: |
-          pip install requests
-          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath bore
-          @'
-          import socket, threading, select, subprocess, re, requests, glob
-
-          def handle(client):
-              try:
-                  data = client.recv(256)
-                  client.send(b"\x05\x00")
-                  data = client.recv(256)
-                  addr_type = data[3]
-                  if addr_type == 1:
-                      addr = socket.inet_ntoa(data[4:8])
-                      port = int.from_bytes(data[8:10], "big")
-                  elif addr_type == 3:
-                      ln = data[4]
-                      addr = data[5:5+ln].decode()
-                      port = int.from_bytes(data[5+ln:7+ln], "big")
-                  else:
-                      client.close()
-                      return
-                  remote = socket.socket()
-                  remote.connect((addr, port))
-                  client.send(b"\x05\x00\x00\x01" + socket.inet_aton("0.0.0.0") + (0).to_bytes(2,"big"))
-                  while True:
-                      r, _, _ = select.select([client, remote], [], [], 60)
-                      if not r: break
-                      for s in r:
-                          d = s.recv(4096)
-                          if not d: return
-                          (remote if s is client else client).sendall(d)
-              except: pass
-              finally: client.close()
-
-          srv = socket.socket()
-          srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-          srv.bind(("0.0.0.0", 1080))
-          srv.listen(100)
-          threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
-
-          bore_list = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
-          bore_exe = bore_list[0] if bore_list else ".\\bore\\bore.exe"
-          print(f"bore: {bore_exe}", flush=True)
-
-          proc = subprocess.Popen([bore_exe, "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-          for line in proc.stdout:
-              print(line, end="", flush=True)
-              m = re.search(r"remote_port=(\d+)", line)
-              if m:
-                  adres = f"bore.pub:{m.group(1)}"
-                  try:
-                      r = requests.put("https://proxybot-b4a59-default-rtdb.firebaseio.com/portlar/makine3.json", json={"adres": adres})
-                      print(f"FIREBASE KAYDEDILDI: {adres} status={r.status_code}", flush=True)
-                  except Exception as e:
-                      print(f"Firebase hatasi: {e}", flush=True)
-                  break
-          proc.wait()
-          '@ | Out-File -FilePath run.py -Encoding utf8
-          python run.py
+          echo "Proxy bilgileri Firebase'e iletildi: bore.pub:$PORT"
+          
+          # Akışı canlı tut
+          tail -f bore.log
