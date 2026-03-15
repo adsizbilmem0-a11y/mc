@@ -10,7 +10,7 @@ jobs:
         run: |
           pip install requests
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
+          Expand-Archive bore.zip -DestinationPath bore
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -49,7 +49,13 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          import os, glob
+          bore_path = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
+          if not bore_path:
+              bore_path = glob.glob(".\\bore\\bore.exe", recursive=True)
+          print(f"bore path: {bore_path}", flush=True)
+
+          proc = subprocess.Popen(bore_path[0] if bore_path else "bore.exe", args=[bore_path[0] if bore_path else "bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
@@ -73,7 +79,7 @@ jobs:
         run: |
           pip install requests
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
+          Expand-Archive bore.zip -DestinationPath bore
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -112,7 +118,13 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          import glob
+          bore_path = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
+          if not bore_path:
+              bore_path = glob.glob(".\\bore\\bore.exe", recursive=True)
+          print(f"bore path: {bore_path}", flush=True)
+
+          proc = subprocess.Popen(bore_path[0] if bore_path else "bore.exe", args=[bore_path[0] if bore_path else "bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
@@ -136,7 +148,7 @@ jobs:
         run: |
           pip install requests
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
-          Expand-Archive bore.zip -DestinationPath .
+          Expand-Archive bore.zip -DestinationPath bore
           @'
           import socket, threading, select, subprocess, re, requests
 
@@ -175,7 +187,13 @@ jobs:
           srv.listen(100)
           threading.Thread(target=lambda: [threading.Thread(target=handle, args=(srv.accept()[0],), daemon=True).start() for _ in iter(int, 1)], daemon=True).start()
 
-          proc = subprocess.Popen([".\\bore-v0.5.1-x86_64-pc-windows-msvc\\bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          import glob
+          bore_path = glob.glob(".\\bore\\**\\bore.exe", recursive=True)
+          if not bore_path:
+              bore_path = glob.glob(".\\bore\\bore.exe", recursive=True)
+          print(f"bore path: {bore_path}", flush=True)
+
+          proc = subprocess.Popen(bore_path[0] if bore_path else "bore.exe", args=[bore_path[0] if bore_path else "bore.exe", "local", "1080", "--to", "bore.pub"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
           for line in proc.stdout:
               print(line, end="", flush=True)
               m = re.search(r"remote_port=(\d+)", line)
