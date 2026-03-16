@@ -7,24 +7,25 @@ jobs:
     steps:
       - name: Baslat
         run: |
-          # Gost: Windows'taki '.\gost-windows-amd64.exe -L :8080' komutunun Linux hali
           wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
           gunzip gost-linux-amd64-2.11.5.gz
           chmod +x gost-linux-amd64-2.11.5
           ./gost-linux-amd64-2.11.5 -L :8080 > gost.log 2>&1 &
-          
-          # Bore: Windows'taki '.\bore.exe local 8080 --to bore.pub' komutunun Linux hali
           wget -q https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 8080 --to bore.pub > bore.log 2>&1 &
-          
-          sleep 12
+          sleep 15
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
           
-          # Firebase'e Gönder (Direkt bore.pub ve portu kaydediyoruz)
-          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy1.json"
+          # Dinamik Numara Bulma
+          ALL_PROXIES=$(curl -s "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies.json")
+          if [ "$ALL_PROXIES" == "null" ] || [ -z "$ALL_PROXIES" ]; then NEXT_NUM=1; else
+            LAST_NUM=$(echo $ALL_PROXIES | grep -oP 'proxy\K[0-9]+' | sort -n | tail -1)
+            [ -z "$LAST_NUM" ] && LAST_NUM=0; NEXT_NUM=$((LAST_NUM + 1)); fi
+          
+          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP, \"status\": \"kullanılmadı\"}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy$NEXT_NUM.json"
           tail -f bore.log
 
   proxy2:
@@ -40,10 +41,16 @@ jobs:
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 8080 --to bore.pub > bore.log 2>&1 &
-          sleep 12
+          sleep 18 # Çakışmasın diye bir tık daha uzun bekleme
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
-          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy2.json"
+          
+          ALL_PROXIES=$(curl -s "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies.json")
+          if [ "$ALL_PROXIES" == "null" ] || [ -z "$ALL_PROXIES" ]; then NEXT_NUM=1; else
+            LAST_NUM=$(echo $ALL_PROXIES | grep -oP 'proxy\K[0-9]+' | sort -n | tail -1)
+            [ -z "$LAST_NUM" ] && LAST_NUM=0; NEXT_NUM=$((LAST_NUM + 1)); fi
+          
+          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP, \"status\": \"kullanılmadı\"}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy$NEXT_NUM.json"
           tail -f bore.log
 
   proxy3:
@@ -59,8 +66,14 @@ jobs:
           tar -xf bore-v0.5.1-x86_64-unknown-linux-musl.tar.gz
           chmod +x bore
           ./bore local 8080 --to bore.pub > bore.log 2>&1 &
-          sleep 12
+          sleep 21 # Çakışmasın diye daha uzun bekleme
           PORT=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' bore.log | grep -oP 'remote_port=\K[0-9]+' | head -1)
           TIMESTAMP=$(date +%s)
-          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy3.json"
+          
+          ALL_PROXIES=$(curl -s "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies.json")
+          if [ "$ALL_PROXIES" == "null" ] || [ -z "$ALL_PROXIES" ]; then NEXT_NUM=1; else
+            LAST_NUM=$(echo $ALL_PROXIES | grep -oP 'proxy\K[0-9]+' | sort -n | tail -1)
+            [ -z "$LAST_NUM" ] && LAST_NUM=0; NEXT_NUM=$((LAST_NUM + 1)); fi
+          
+          curl -X PUT -d "{\"url\": \"bore.pub\", \"port\": \"$PORT\", \"time\": $TIMESTAMP, \"status\": \"kullanılmadı\"}" "https://proxybot-b4a59-default-rtdb.firebaseio.com/proxies/proxy$NEXT_NUM.json"
           tail -f bore.log
